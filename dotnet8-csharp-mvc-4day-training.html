@@ -272,8 +272,31 @@ else
       <div class="module">
         <h3>3. OOP, Collections, LINQ, Enums, and Extension Methods</h3>
         <p>
-          Professional C# code relies on clean object models, composable collections, and LINQ for data queries.
-          Enums improve readability for fixed domain values, and extension methods keep APIs fluent and reusable.
+          <strong>Object-Oriented Programming (OOP) syntax breakdown:</strong><br />
+          In <code>public class TodoItem</code>, the keyword <code>public</code> means the type is accessible from other assemblies.
+          The keyword <code>class</code> defines a reference type. Properties like <code>public int Id { get; set; }</code>
+          use accessors: <code>get</code> reads the value and <code>set</code> writes the value.
+          Initializers such as <code>= string.Empty</code> prevent null issues and satisfy nullable reference rules.
+          <br /><br />
+          <strong>Collections syntax breakdown:</strong><br />
+          <code>List&lt;TodoItem&gt;</code> is a generic collection; <code>&lt;TodoItem&gt;</code> specifies the element type.
+          <code>new()</code> is target-typed object creation and uses the left side type (<code>List&lt;TodoItem&gt;</code>) to infer constructor type.
+          Collection initializers with braces add items immediately.
+          <br /><br />
+          <strong>LINQ syntax breakdown:</strong><br />
+          Each call in the chain returns an enumerable sequence. <code>Where(...)</code> filters,
+          <code>OrderByDescending(...)</code> sorts, and <code>Select(...)</code> projects into a new shape.
+          Lambda syntax <code>t =&gt; ...</code> means: input parameter <code>t</code> maps to expression result.
+          The final query is deferred until iteration in <code>foreach</code>.
+          <br /><br />
+          <strong>Enum syntax breakdown:</strong><br />
+          <code>public enum TodoPriority { Low = 1, Medium = 2, High = 3 }</code> creates named constants backed by <code>int</code>.
+          Explicit numeric assignments are helpful for persistence/API contracts.
+          <br /><br />
+          <strong>Extension method syntax breakdown:</strong><br />
+          A static class (<code>TodoExtensions</code>) contains a static method where the first parameter is prefixed by <code>this</code>.
+          In <code>ToStatusLabel(this TodoItem todo)</code>, <code>this TodoItem</code> extends <code>TodoItem</code> as if it had an instance method.
+          Expression-bodied syntax <code>=&gt;</code> returns a value in one line.
         </p>
 
         <pre><code class="language-csharp">using System;
@@ -329,8 +352,24 @@ foreach (var item in pendingHighPriority)
       <div class="module">
         <h3>1. Nullable Reference Types, Pattern Matching, and Switch Expressions</h3>
         <p>
-          Nullable reference types reduce NullReferenceExceptions by moving null safety into compile-time analysis.
-          Pattern matching and switch expressions enable concise, readable decision logic.
+          <strong>Nullable reference type syntax:</strong><br />
+          <code>#nullable enable</code> activates nullable analysis in this file scope.
+          In <code>string? Department</code>, the <code>?</code> indicates the property may be null.
+          If you declare <code>string Name</code> without <code>?</code>, the compiler expects non-null assignment.
+          <br /><br />
+          <strong>Record syntax:</strong><br />
+          <code>public record UserProfile(string Name, string? Department);</code> defines an immutable data-centric type with
+          generated constructor, value equality, and deconstruction.
+          <br /><br />
+          <strong>Switch expression syntax:</strong><br />
+          In <code>profile.Department switch { ... }</code>, each arm maps a pattern to a result.
+          <code>null or "" =&gt; "No Department"</code> combines patterns with <code>or</code>.
+          The underscore arm <code>_ =&gt; "General"</code> is the fallback/default arm.
+          <br /><br />
+          <strong>Pattern matching syntax:</strong><br />
+          <code>int n when n &gt; 0</code> is a type pattern plus guard clause.
+          <code>string { Length: &gt; 0 } s</code> is a property pattern that matches non-empty strings and captures the value in <code>s</code>.
+          Pattern matching helps replace deep <code>if/else</code> blocks with explicit, testable rules.
         </p>
 
         <pre><code class="language-csharp">#nullable enable
@@ -363,8 +402,21 @@ public static class UserFormatter
       <div class="module">
         <h3>2. Using Declarations, Index/Range, Async/Await, and Tasks</h3>
         <p>
-          Modern C# encourages resource safety and asynchronous I/O.
-          In web apps, async methods improve scalability by freeing worker threads during I/O waits.
+          <strong>Using declaration syntax:</strong><br />
+          <code>using var reader = new StreamReader(filePath);</code> declares a disposable resource that is automatically disposed
+          at the end of the current scope, without needing an explicit <code>using (...) { }</code> block.
+          <br /><br />
+          <strong>Index and range syntax:</strong><br />
+          <code>words[..Math.Min(10, words.Length)]</code> means start at index 0 and slice up to (but not including) the computed end.
+          This is cleaner than manual loops for subarray extraction.
+          <br /><br />
+          <strong>Async method syntax:</strong><br />
+          Methods marked <code>async</code> can use <code>await</code>. The return type is typically <code>Task</code> or <code>Task&lt;T&gt;</code>.
+          <code>await reader.ReadToEndAsync(...)</code> asynchronously waits for I/O completion without blocking thread execution.
+          <br /><br />
+          <strong>Task orchestration syntax:</strong><br />
+          <code>Task.WhenAll(taskA, taskB)</code> composes multiple tasks and asynchronously resumes when all complete.
+          This is useful for parallel I/O operations in service and controller layers.
         </p>
 
         <pre><code class="language-csharp">using System;
@@ -416,8 +468,17 @@ public class ReportService
       <div class="module">
         <h3>1. MVC Architecture, Project Structure, Controllers, and Actions</h3>
         <p>
-          MVC separates concerns: Models (data), Views (UI), Controllers (request orchestration).
-          In .NET 8, MVC wiring is configured in <code>Program.cs</code> using the minimal hosting model.
+          <strong>MVC separation syntax:</strong><br />
+          Models represent application state and validation rules.
+          Views are Razor templates that render HTML.
+          Controllers are classes inheriting from <code>Controller</code> and expose action methods that return <code>IActionResult</code>.
+          <br /><br />
+          <strong>Minimal hosting syntax in .NET 8:</strong><br />
+          <code>var builder = WebApplication.CreateBuilder(args);</code> creates the host and configuration pipeline.
+          <code>builder.Services.AddControllersWithViews();</code> registers MVC services in DI.
+          <code>var app = builder.Build();</code> builds the configured app.
+          Middleware calls such as <code>app.UseRouting()</code> and endpoint mapping via <code>app.MapControllerRoute(...)</code>
+          define how requests flow to controllers and actions.
         </p>
 
         <pre><code class="language-csharp">// Program.cs (.NET 8)
@@ -452,8 +513,21 @@ app.Run();</code></pre>
       <div class="module">
         <h3>2. Routing, Model Binding, Razor Views, Layouts, Partial Views, and Tag Helpers</h3>
         <p>
-          Model binding maps HTTP request values to action parameters or models.
-          Razor + Tag Helpers make strongly typed HTML generation clean and maintainable.
+          <strong>Controller and action syntax:</strong><br />
+          Attributes like <code>[HttpGet]</code> and <code>[HttpPost]</code> constrain which HTTP verbs can invoke an action.
+          <code>[ValidateAntiForgeryToken]</code> enforces CSRF protection for form posts.
+          <code>return View(model);</code> passes a model object to Razor.
+          <code>RedirectToAction(nameof(Index))</code> performs a PRG (Post/Redirect/Get) flow.
+          <br /><br />
+          <strong>Model binding syntax:</strong><br />
+          In <code>public IActionResult Create(Todo model)</code>, MVC binds form fields to the <code>Todo</code> object by matching names.
+          <code>ModelState.IsValid</code> checks data-annotation validation before persistence.
+          <br /><br />
+          <strong>Razor and Tag Helper syntax:</strong><br />
+          <code>@model TodoTrainingApp.Models.Todo</code> defines the view model type.
+          <code>asp-for="Title"</code> binds an HTML element to the <code>Title</code> property and emits proper name/id attributes.
+          <code>asp-validation-for="Title"</code> renders validation messages.
+          <code>asp-action="Create"</code> generates form post target URLs from routing metadata.
         </p>
 
         <pre><code class="language-csharp">using Microsoft.AspNetCore.Mvc;
@@ -514,8 +588,19 @@ public class TodoController : Controller
       <div class="module">
         <h3>1. View Components, Areas, DI, Service Architecture, Repository Basics</h3>
         <p>
-          Advanced MVC applications use modular UI (View Components), functional separation (Areas), and dependency injection for testability.
-          Repository pattern is useful when abstracting persistence complexity, though EF Core itself is already a unit-of-work + repository style API.
+          <strong>View Component syntax:</strong><br />
+          A class inheriting <code>ViewComponent</code> encapsulates reusable UI + logic.
+          <code>InvokeAsync()</code> returns <code>IViewComponentResult</code>, often a partial-like view with a focused model.
+          This keeps layout-level widgets (for example "Pending Todos") out of controllers.
+          <br /><br />
+          <strong>Dependency Injection syntax:</strong><br />
+          Constructor injection (<code>PendingTodosViewComponent(ITodoService todoService)</code>) requests dependencies from the container.
+          Service registration lines such as <code>AddScoped&lt;ITodoService, TodoService&gt;()</code> map abstractions to implementations per request scope.
+          <br /><br />
+          <strong>Areas and service architecture:</strong><br />
+          Areas organize large applications into feature segments (e.g., Admin, Support).
+          Services hold business rules and orchestration, while repositories focus on persistence queries/commands.
+          This split improves testability and reduces controller complexity.
         </p>
 
         <pre><code class="language-csharp">using Microsoft.AspNetCore.Mvc;
@@ -547,8 +632,24 @@ builder.Services.AddScoped&lt;ITodoService, TodoService&gt;();</code></pre>
       <div class="module" id="project">
         <h3>2. Final Project: Todo Management System (Users ↔ Todos)</h3>
         <p>
-          Build a production-style ASP.NET Core MVC app with EF Core, SQL Server, layered architecture, and proper routing.
-          Relationship: one User has many Todos.
+          <strong>Domain modeling syntax:</strong><br />
+          The <code>User</code> entity includes scalar columns and a navigation collection <code>ICollection&lt;Todo&gt; Todos</code>.
+          The <code>Todo</code> entity has foreign key <code>UserId</code> and reference navigation <code>User?</code>.
+          This pair defines one-to-many cardinality in code-first EF Core.
+          <br /><br />
+          <strong>Validation syntax:</strong><br />
+          Data annotations like <code>[Required]</code>, <code>[StringLength(...)]</code>, and <code>[EmailAddress]</code>
+          provide server-side validation metadata used by MVC model validation.
+          <br /><br />
+          <strong>DbContext fluent API syntax:</strong><br />
+          <code>modelBuilder.Entity&lt;User&gt;().HasIndex(u =&gt; u.Email).IsUnique()</code> creates a unique index.
+          Relationship mapping uses <code>HasOne(...).WithMany(...).HasForeignKey(...)</code>.
+          <code>OnDelete(DeleteBehavior.Cascade)</code> configures dependent-row deletion behavior.
+          <br /><br />
+          <strong>Controller + DI + routing syntax:</strong><br />
+          In the final controller, constructor-injected services are used in async actions.
+          <code>public async Task&lt;IActionResult&gt; Index()</code> returns a view after awaiting data access.
+          Helpers like <code>SelectListItem</code> transform user entities into dropdown options for Razor forms.
         </p>
 
         <div class="grid-2">
