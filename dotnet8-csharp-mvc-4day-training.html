@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>.NET 8 & C# Developer Training | 4-Day ASP.NET Core MVC Course</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --primary: #2b579a;
+      --secondary: #1f2d3d;
+      --accent: #6a8dff;
+      --text: #243447;
+      --muted: #5f6b7a;
+      --border: #d9e1ec;
+      --code-bg: #0f172a;
+      --code-text: #e2e8f0;
+      --ok: #0f766e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      background: linear-gradient(130deg, var(--primary), #1d3f73 60%, #162a4f);
+      color: #fff;
+      border-bottom: 6px solid #9db7ff;
+      padding: 2rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 18px rgba(13, 38, 76, 0.25);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 0.4px;
+    }
+
+    header p {
+      margin: 0.7rem 0 0;
+      max-width: 900px;
+      opacity: 0.96;
+    }
+
+    .meta {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+    }
+
+    .pill {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    nav {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1.5rem;
+    }
+
+    nav h2 {
+      margin-top: 0;
+      color: var(--secondary);
+      font-size: 1.2rem;
+    }
+
+    nav ul {
+      margin: 0.4rem 0 0;
+      padding-left: 1.2rem;
+      columns: 2;
+      column-gap: 2.2rem;
+    }
+
+    nav li { margin-bottom: 0.5rem; }
+
+    nav a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    nav a:hover { text-decoration: underline; }
+
+    .day {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 8px solid var(--primary);
+      border-radius: 10px;
+      padding: 1.6rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .day h2 {
+      margin-top: 0;
+      color: var(--secondary);
+      border-bottom: 2px solid #e8eef8;
+      padding-bottom: 0.4rem;
+    }
+
+    .timing {
+      background: #eef4ff;
+      border: 1px solid #c8d8ff;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      color: #224a8d;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .module {
+      margin-top: 1rem;
+      border: 1px dashed #d6e0ef;
+      border-radius: 8px;
+      padding: 1rem;
+      background: #fcfdff;
+    }
+
+    .module h3 {
+      margin-top: 0;
+      color: #19325c;
+      font-size: 1.08rem;
+    }
+
+    pre {
+      margin: 0.8rem 0 1rem;
+      background: var(--code-bg);
+      color: var(--code-text);
+      border-radius: 8px;
+      overflow-x: auto;
+      padding: 1rem;
+      border: 1px solid #1e293b;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.92rem;
+    }
+
+    .best-practice {
+      border-left: 5px solid var(--ok);
+      background: #f0fdfa;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin: 0.9rem 0;
+    }
+
+    .best-practice strong { color: #0f5132; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.9rem;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.8rem;
+      background: #fff;
+    }
+
+    footer {
+      margin-top: 1.4rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      color: var(--muted);
+    }
+
+    .small { font-size: 0.92rem; }
+
+    @media (max-width: 900px) {
+      nav ul { columns: 1; }
+      .container { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>.NET 8 & C# Developer Training Course</h1>
+      <p>
+        Professional 4-day enterprise training program for junior-to-intermediate developers learning modern C# and ASP.NET Core MVC.
+        This guide combines language fundamentals, production-ready architecture, and a complete final project using EF Core in .NET 8.
+      </p>
+      <div class="meta">
+        <span class="pill">Duration: 4 Days</span>
+        <span class="pill">Daily Time: 5h 30m</span>
+        <span class="pill">Stack: .NET 8, C# 12, ASP.NET Core MVC, EF Core 8</span>
+        <span class="pill">Audience: Junior → Intermediate Developers</span>
+      </div>
+    </header>
+
+    <nav>
+      <h2>Table of Contents</h2>
+      <ul>
+        <li><a href="#day1">Day 1 — C# Fundamentals</a></li>
+        <li><a href="#day2">Day 2 — Modern C# Features</a></li>
+        <li><a href="#day3">Day 3 — ASP.NET Core MVC Architecture</a></li>
+        <li><a href="#day4">Day 4 — Advanced MVC + Final Project</a></li>
+        <li><a href="#project">Final Project: Todo Management System</a></li>
+      </ul>
+    </nav>
+
+    <section class="day" id="day1">
+      <h2>Day 1 — C# Fundamentals</h2>
+      <div class="timing">Daily Schedule (5h 30m): 09:00-10:30, 10:45-12:15, 13:15-14:45, 15:00-16:00</div>
+
+      <div class="module">
+        <h3>1. .NET Ecosystem & Runtime Overview</h3>
+        <p>
+          .NET 8 is a unified, high-performance, cross-platform runtime for web, cloud, desktop, and services.
+          At runtime, your C# code is compiled to IL (Intermediate Language), then JIT-compiled for the host OS/CPU.
+          ASP.NET Core MVC runs on Kestrel and can be hosted behind IIS, Nginx, or cloud load balancers.
+        </p>
+        <pre><code class="language-bash"># Create a new ASP.NET Core MVC app (.NET 8)
+dotnet new mvc -n TodoTrainingApp
+cd TodoTrainingApp
+dotnet run</code></pre>
+        <div class="best-practice"><strong>Best Practice:</strong> Always use the latest LTS SDK for enterprise projects and pin SDK via <code>global.json</code> for team consistency.</div>
+      </div>
+
+      <div class="module">
+        <h3>2. C# Syntax Fundamentals, Types, and Control Flow</h3>
+        <p>
+          C# is statically typed, object-oriented, and expressive. Understand variables, type inference, scope, and control statements early.
+          Value types (e.g., <code>int</code>, <code>DateTime</code>) store data directly; reference types (e.g., classes) store object references.
+        </p>
+        <pre><code class="language-csharp">using System;
+
+int maxRetries = 3;          // value type
+string appName = "Todo MVC"; // reference type
+
+for (int i = 1; i &lt;= maxRetries; i++)
+{
+    Console.WriteLine($"Attempt {i} for {appName}");
+}
+
+bool isProduction = false;
+if (!isProduction)
+{
+    Console.WriteLine("Running in development mode");
+}
+else
+{
+    Console.WriteLine("Running in production mode");
+}</code></pre>
+      </div>
+
+      <div class="module">
+        <h3>3. OOP, Collections, LINQ, Enums, and Extension Methods</h3>
+        <p>
+          Professional C# code relies on clean object models, composable collections, and LINQ for data queries.
+          Enums improve readability for fixed domain values, and extension methods keep APIs fluent and reusable.
+        </p>
+
+        <pre><code class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public enum TodoPriority
+{
+    Low = 1,
+    Medium = 2,
+    High = 3
+}
+
+public class TodoItem
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public bool IsCompleted { get; set; }
+    public TodoPriority Priority { get; set; }
+}
+
+public static class TodoExtensions
+{
+    public static string ToStatusLabel(this TodoItem todo)
+        =&gt; todo.IsCompleted ? "Completed" : "Pending";
+}
+
+var todos = new List&lt;TodoItem&gt;
+{
+    new() { Id = 1, Title = "Setup solution", IsCompleted = true, Priority = TodoPriority.High },
+    new() { Id = 2, Title = "Create models", IsCompleted = false, Priority = TodoPriority.Medium },
+    new() { Id = 3, Title = "Build views", IsCompleted = false, Priority = TodoPriority.Low }
+};
+
+var pendingHighPriority = todos
+    .Where(t =&gt; !t.IsCompleted &amp;&amp; t.Priority == TodoPriority.Medium || t.Priority == TodoPriority.High)
+    .OrderByDescending(t =&gt; t.Priority)
+    .Select(t =&gt; new { t.Title, Status = t.ToStatusLabel(), t.Priority });
+
+foreach (var item in pendingHighPriority)
+{
+    Console.WriteLine($"{item.Title} | {item.Priority} | {item.Status}");
+}</code></pre>
+
+        <div class="best-practice"><strong>Best Practice:</strong> Prefer expressive names and immutable DTOs where possible; avoid large god classes by separating domain concerns.</div>
+      </div>
+    </section>
+
+    <section class="day" id="day2">
+      <h2>Day 2 — Modern C# Features (Professional Usage)</h2>
+      <div class="timing">Daily Schedule (5h 30m): Language deep-dive + async labs + code review exercises</div>
+
+      <div class="module">
+        <h3>1. Nullable Reference Types, Pattern Matching, and Switch Expressions</h3>
+        <p>
+          Nullable reference types reduce NullReferenceExceptions by moving null safety into compile-time analysis.
+          Pattern matching and switch expressions enable concise, readable decision logic.
+        </p>
+
+        <pre><code class="language-csharp">#nullable enable
+using System;
+
+public record UserProfile(string Name, string? Department);
+
+public static class UserFormatter
+{
+    public static string GetDepartmentLabel(UserProfile profile)
+        =&gt; profile.Department switch
+        {
+            null or "" =&gt; "No Department",
+            "IT" =&gt; "Technology",
+            "HR" =&gt; "Human Resources",
+            _ =&gt; "General"
+        };
+
+    public static string Describe(object value) =&gt; value switch
+    {
+        int n when n &gt; 0 =&gt; $"Positive number: {n}",
+        int _ =&gt; "Non-positive number",
+        string { Length: &gt; 0 } s =&gt; $"Text: {s}",
+        null =&gt; "Null value",
+        _ =&gt; "Unknown type"
+    };
+}</code></pre>
+      </div>
+
+      <div class="module">
+        <h3>2. Using Declarations, Index/Range, Async/Await, and Tasks</h3>
+        <p>
+          Modern C# encourages resource safety and asynchronous I/O.
+          In web apps, async methods improve scalability by freeing worker threads during I/O waits.
+        </p>
+
+        <pre><code class="language-csharp">using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+public class ReportService
+{
+    public async Task&lt;string&gt; ReadPreviewAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        using var reader = new StreamReader(filePath); // using declaration
+        string content = await reader.ReadToEndAsync(cancellationToken);
+
+        string[] words = content.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        string preview = string.Join(' ', words[..Math.Min(10, words.Length)]); // range operator
+
+        return preview;
+    }
+
+    public async Task&lt;int&gt; SimulateWorkAsync()
+    {
+        Task&lt;int&gt; taskA = Task.Run(async () =&gt;
+        {
+            await Task.Delay(100);
+            return 10;
+        });
+
+        Task&lt;int&gt; taskB = Task.Run(async () =&gt;
+        {
+            await Task.Delay(150);
+            return 20;
+        });
+
+        int[] results = await Task.WhenAll(taskA, taskB);
+        return results.Sum();
+    }
+}</code></pre>
+
+        <div class="best-practice"><strong>Best Practice:</strong> In ASP.NET Core, avoid <code>.Result</code> / <code>.Wait()</code>; use <code>async/await</code> end-to-end to prevent thread starvation and deadlocks.</div>
+      </div>
+    </section>
+
+    <section class="day" id="day3">
+      <h2>Day 3 — ASP.NET Core MVC Architecture (.NET 8)</h2>
+      <div class="timing">Daily Schedule (5h 30m): MVC architecture + routing/model binding + Razor UI labs</div>
+
+      <div class="module">
+        <h3>1. MVC Architecture, Project Structure, Controllers, and Actions</h3>
+        <p>
+          MVC separates concerns: Models (data), Views (UI), Controllers (request orchestration).
+          In .NET 8, MVC wiring is configured in <code>Program.cs</code> using the minimal hosting model.
+        </p>
+
+        <pre><code class="language-csharp">// Program.cs (.NET 8)
+using Microsoft.EntityFrameworkCore;
+using TodoTrainingApp.Data;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();
+builder.Services.AddDbContext&lt;AppDbContext&gt;(options =&gt;
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.Run();</code></pre>
+      </div>
+
+      <div class="module">
+        <h3>2. Routing, Model Binding, Razor Views, Layouts, Partial Views, and Tag Helpers</h3>
+        <p>
+          Model binding maps HTTP request values to action parameters or models.
+          Razor + Tag Helpers make strongly typed HTML generation clean and maintainable.
+        </p>
+
+        <pre><code class="language-csharp">using Microsoft.AspNetCore.Mvc;
+using TodoTrainingApp.Models;
+
+namespace TodoTrainingApp.Controllers;
+
+public class TodoController : Controller
+{
+    private static readonly List&lt;Todo&gt; Todos = new();
+
+    public IActionResult Index() =&gt; View(Todos);
+
+    [HttpGet]
+    public IActionResult Create() =&gt; View();
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Create(Todo model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        model.Id = Todos.Count + 1;
+        Todos.Add(model);
+
+        return RedirectToAction(nameof(Index));
+    }
+}</code></pre>
+
+        <pre><code class="language-html">@model TodoTrainingApp.Models.Todo
+
+&lt;form asp-action="Create" method="post"&gt;
+    &lt;div class="mb-3"&gt;
+        &lt;label asp-for="Title" class="form-label"&gt;&lt;/label&gt;
+        &lt;input asp-for="Title" class="form-control" /&gt;
+        &lt;span asp-validation-for="Title" class="text-danger"&gt;&lt;/span&gt;
+    &lt;/div&gt;
+
+    &lt;div class="form-check"&gt;
+        &lt;input asp-for="IsCompleted" class="form-check-input" /&gt;
+        &lt;label asp-for="IsCompleted" class="form-check-label"&gt;&lt;/label&gt;
+    &lt;/div&gt;
+
+    &lt;button type="submit" class="btn btn-primary mt-3"&gt;Save&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+
+        <div class="best-practice"><strong>Best Practice:</strong> Keep controllers thin. Put business logic in services; controllers should validate input, call services, and return responses.</div>
+      </div>
+    </section>
+
+    <section class="day" id="day4">
+      <h2>Day 4 — Advanced MVC Features + Final Project Delivery</h2>
+      <div class="timing">Daily Schedule (5h 30m): Advanced architecture + project build + review + Q&amp;A</div>
+
+      <div class="module">
+        <h3>1. View Components, Areas, DI, Service Architecture, Repository Basics</h3>
+        <p>
+          Advanced MVC applications use modular UI (View Components), functional separation (Areas), and dependency injection for testability.
+          Repository pattern is useful when abstracting persistence complexity, though EF Core itself is already a unit-of-work + repository style API.
+        </p>
+
+        <pre><code class="language-csharp">using Microsoft.AspNetCore.Mvc;
+using TodoTrainingApp.Services;
+
+namespace TodoTrainingApp.ViewComponents;
+
+public class PendingTodosViewComponent : ViewComponent
+{
+    private readonly ITodoService _todoService;
+
+    public PendingTodosViewComponent(ITodoService todoService)
+    {
+        _todoService = todoService;
+    }
+
+    public async Task&lt;IViewComponentResult&gt; InvokeAsync()
+    {
+        var pending = await _todoService.GetPendingAsync();
+        return View(pending);
+    }
+}</code></pre>
+
+        <pre><code class="language-csharp">// DI registration in Program.cs
+builder.Services.AddScoped&lt;ITodoRepository, TodoRepository&gt;();
+builder.Services.AddScoped&lt;ITodoService, TodoService&gt;();</code></pre>
+      </div>
+
+      <div class="module" id="project">
+        <h3>2. Final Project: Todo Management System (Users ↔ Todos)</h3>
+        <p>
+          Build a production-style ASP.NET Core MVC app with EF Core, SQL Server, layered architecture, and proper routing.
+          Relationship: one User has many Todos.
+        </p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h4>Database Tables</h4>
+            <ul>
+              <li><strong>Users</strong>: Id, Name, Email</li>
+              <li><strong>Todos</strong>: Id, Title, IsCompleted, UserId</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Required Deliverables</h4>
+            <ul>
+              <li>Entity models + validation</li>
+              <li>DbContext configuration</li>
+              <li>CRUD controller/actions</li>
+              <li>Razor views with Tag Helpers</li>
+              <li>Service + repository integration via DI</li>
+            </ul>
+          </div>
+        </div>
+
+        <pre><code class="language-csharp">using System.ComponentModel.DataAnnotations;
+
+namespace TodoTrainingApp.Models;
+
+public class User
+{
+    public int Id { get; set; }
+
+    [Required, StringLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required, EmailAddress, StringLength(150)]
+    public string Email { get; set; } = string.Empty;
+
+    public ICollection&lt;Todo&gt; Todos { get; set; } = new List&lt;Todo&gt;();
+}
+
+public class Todo
+{
+    public int Id { get; set; }
+
+    [Required, StringLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    public bool IsCompleted { get; set; }
+
+    public int UserId { get; set; }
+    public User? User { get; set; }
+}</code></pre>
+
+        <pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using TodoTrainingApp.Models;
+
+namespace TodoTrainingApp.Data;
+
+public class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions&lt;AppDbContext&gt; options) : base(options) { }
+
+    public DbSet&lt;User&gt; Users =&gt; Set&lt;User&gt;();
+    public DbSet&lt;Todo&gt; Todos =&gt; Set&lt;Todo&gt;();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity&lt;User&gt;()
+            .HasIndex(u =&gt; u.Email)
+            .IsUnique();
+
+        modelBuilder.Entity&lt;Todo&gt;()
+            .HasOne(t =&gt; t.User)
+            .WithMany(u =&gt; u.Todos)
+            .HasForeignKey(t =&gt; t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}</code></pre>
+
+        <pre><code class="language-csharp">using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using TodoTrainingApp.Models;
+using TodoTrainingApp.Services;
+
+namespace TodoTrainingApp.Controllers;
+
+public class TodoController : Controller
+{
+    private readonly ITodoService _todoService;
+    private readonly IUserService _userService;
+
+    public TodoController(ITodoService todoService, IUserService userService)
+    {
+        _todoService = todoService;
+        _userService = userService;
+    }
+
+    public async Task&lt;IActionResult&gt; Index()
+        =&gt; View(await _todoService.GetAllAsync());
+
+    [HttpGet]
+    public async Task&lt;IActionResult&gt; Create()
+    {
+        await LoadUsersAsync();
+        return View(new Todo());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task&lt;IActionResult&gt; Create(Todo model)
+    {
+        if (!ModelState.IsValid)
+        {
+            await LoadUsersAsync();
+            return View(model);
+        }
+
+        await _todoService.CreateAsync(model);
+        return RedirectToAction(nameof(Index));
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        var users = await _userService.GetAllAsync();
+        ViewBag.Users = users.Select(u =&gt; new SelectListItem
+        {
+            Value = u.Id.ToString(),
+            Text = $"{u.Name} ({u.Email})"
+        }).ToList();
+    }
+}</code></pre>
+
+        <div class="best-practice"><strong>Best Practice:</strong> Add migrations from day one (<code>dotnet ef migrations add InitialCreate</code>) and automate schema updates in CI/CD or controlled deployment scripts.</div>
+      </div>
+    </section>
+
+    <footer>
+      <h3>Implementation Checklist</h3>
+      <ul class="small">
+        <li>Use <code>dotnet format</code> and nullable reference types enabled.</li>
+        <li>Validate all input models with data annotations and server-side checks.</li>
+        <li>Centralize business logic in services; keep controllers thin and focused.</li>
+        <li>Use async EF Core APIs: <code>ToListAsync</code>, <code>FirstOrDefaultAsync</code>, <code>SaveChangesAsync</code>.</li>
+        <li>Apply layered architecture that supports maintainability and unit testing.</li>
+      </ul>
+      <p class="small"><strong>Outcome:</strong> By the end of Day 4, developers can design and deliver a complete .NET 8 MVC application with modern C# patterns and enterprise-ready practices.</p>
+    </footer>
+  </div>
+</body>
+</html>
