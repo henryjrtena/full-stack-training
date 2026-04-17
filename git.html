@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git Fundamentals - Branching, Workflows & Conflict Resolution</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto;font-size:0.9rem}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}.highlight{background:#fffbeb;border-left:4px solid #f59e0b;padding:12px 16px;margin:16px 0;border-radius:6px}.warning{background:#fee2e2;border-left:4px solid #ef4444;padding:12px 16px;margin:16px 0;border-radius:6px}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Version Control</span>
+      <h1>Git Fundamentals</h1>
+      <p>Master Git workflows, branching strategies, merge conflict resolution, and professional development practices. Learn branch naming conventions and habits that prevent conflicts and streamline pull requests.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction to Git</h2>
+      <p>Git is a distributed version control system that tracks changes to your code. Understanding branches, merging, and conflict resolution is essential for collaborative development. This lesson covers practical workflows and best practices for team environments.</p>
+      <ul>
+        <li>Git stores a complete history of every change in your repository.</li>
+        <li>Branches allow parallel development without affecting the main codebase.</li>
+        <li>Merges combine changes from different branches.</li>
+        <li>Conflicts occur when changes overlap; they must be resolved manually.</li>
+        <li>Professional workflows use naming conventions and regular syncing to prevent conflicts.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Creating and Managing Branches</h2>
+      <article>
+        <h3>Creating a New Branch</h3>
+        <pre><code># Create a new branch locally (but don't switch to it)
+git branch feature/user-authentication
+
+# Create and switch to a new branch in one command
+git checkout -b feature/user-authentication
+
+# Modern equivalent using git switch (Git 2.23+)
+git switch -c feature/user-authentication
+
+# List all local branches
+git branch
+
+# List all branches (local and remote)
+git branch -a
+
+# List remote branches only
+git branch -r</code></pre>
+        <p>The <code>-b</code> flag means "create and switch" to the new branch. Always create branches from a clean working directory to avoid carrying uncommitted changes into the new branch.</p>
+      </article>
+
+      <article>
+        <h3>Understanding Branch Pointers</h3>
+        <pre><code># Your current branch pointer and recent commits
+git log --oneline --graph --all
+
+# Example output:
+# * 3a2b1c0 (HEAD -> feature/user-authentication) Add login form
+# | * 2f1e9d8 (main) Bump version to 1.2.0
+# |/
+# * 1a0b9c7 Refactor database module
+# * 0f9e8d6 Initial commit</code></pre>
+        <p>HEAD points to your current branch. A branch is just a pointer to a specific commit. When you create a new branch, you're creating a new pointer that references the current commit.</p>
+      </article>
+
+      <article>
+        <h3>Switching Between Branches</h3>
+        <pre><code># Switch to an existing branch using checkout
+git checkout main
+
+# Modern equivalent using switch
+git switch main
+
+# Switch to a branch and pull latest changes
+git switch main && git pull
+
+# Switch back to the previous branch
+git checkout -
+
+# List branches and switch interactively
+git branch -a</code></pre>
+        <p>Before switching branches, ensure your working directory is clean. Commit or stash uncommitted changes to avoid losing work.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Fetching, Pulling, and Staying in Sync</h2>
+      <article>
+        <h3>Fetch vs Pull</h3>
+        <pre><code># Fetch: Download remote changes WITHOUT merging
+git fetch origin
+
+# Fetch all remotes
+git fetch --all
+
+# After fetching, see what changed on remote
+git log ..origin/main
+
+# Pull: Fetch + Merge in one command
+git pull origin main
+
+# Pull with rebase (preferred for cleaner history)
+git pull --rebase origin main
+
+# Pull from current branch (if tracking is set up)
+git pull</code></pre>
+        <p><strong>Fetch</strong> is safe—it only downloads changes without modifying your local branches. <strong>Pull</strong> automatically merges, which can introduce merge commits. Use fetch to review changes before merging.</p>
+      </article>
+
+      <article>
+        <h3>Nice to Have Habit: Frequent Fetching Minimizes Conflicts</h3>
+        <div class="highlight">
+          <strong>Best Practice:</strong> Fetch from the parent branch (usually main/dev) frequently, even while developing on your feature branch. This prevents your branch from drifting too far from the team's changes, reducing merge conflicts during pull requests.
+        </div>
+        <pre><code># While on your feature branch, frequently sync with main
+# Step 1: Fetch the latest from remotes
+git fetch origin
+
+# Step 2: Check how far your branch is from main
+git log --oneline main..HEAD  # Commits unique to your branch
+git log --oneline HEAD..main  # Commits from main you don't have
+
+# Step 3: Merge (or rebase) main into your feature branch
+# Option A: Merge (creates a merge commit)
+git merge origin/main
+
+# Option B: Rebase (replays your commits on top of main)
+git rebase origin/main
+
+# Step 4: Continue developing with less conflict risk later</code></pre>
+        <p>Rebasing is often preferred because it keeps the history linear and cleaner. However, use caution: never rebase branches that others are working on, as it rewrites history.</p>
+      </article>
+
+      <article>
+        <h3>Workflow: Regular Syncing Strategy</h3>
+        <pre><code># Daily workflow to minimize conflicts
+# Step 1: Start your day or begin a coding session
+git fetch origin
+
+# Step 2: Check if main ha d updates
+git log --oneline --graph main..origin/main
+
+# Step 3: If main has new commits, sync your branch
+git rebase origin/main
+# or
+git merge origin/main
+
+# Step 4: Continue coding
+# ... make your changes, commit ...
+
+# Step 5: Before pushing, sync one last time
+git fetch origin
+git rebase origin/main  # or git merge origin/main
+
+# Step 6: Push your feature branch
+git push origin feature/user-authentication</code></pre>
+        <p>This habit of frequent fetching and syncing prevents your branch from accumulating months of diverged work, which would result in massive merge conflicts.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Understanding Merge Conflicts</h2>
+      <article>
+        <h3>What Causes Merge Conflicts?</h3>
+        <pre><code># Scenario: You and a teammate edit the same file at the same location
+# Your branch: feature/login - modifies src/auth.cs line 10-15
+# Main branch: also modifies src/auth.cs line 10-15
+
+# When you try to merge, Git doesn't know which version to keep
+git merge origin/main
+# CONFLICT (content): Merge conflict in src/auth.cs
+# CONFLICT (content): Merge conflict in src/models/User.cs
+# Automatic merge failed; fix conflicts and then commit the result.</code></pre>
+        <p>Conflicts happen when two branches modify the same lines of code differently. Git cannot automatically decide which change is correct.</p>
+      </article>
+
+      <article>
+        <h3>Conflict Markers and Resolution</h3>
+        <pre><code>// src/auth.cs - shows conflict markers
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+    public string Login(string username, string password)
+    {
+        // Your implementation
+        return ValidateUser(username, password);
+    }
+=======
+    public async Task&lt;string&gt; LoginAsync(string username, string password)
+    {
+        // Their implementation
+        return await AuthenticationService.ValidateAsync(username, password);
+    }
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; origin/main</code></pre>
+        <p>The section between <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> and <code>=======</code> is your version. The section between <code>=======</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> is the incoming version.</p>
+      </article>
+
+      <article>
+        <h3>Resolving Conflicts Manually</h3>
+        <pre><code>// Step 1: Open the conflicted file and decide what to keep
+// Resolved version - combining the best of both approaches:
+public async Task&lt;string&gt; LoginAsync(string username, string password)
+{
+    // Use the async version with proper validation
+    if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        return null;
+    
+    return await AuthenticationService.ValidateAsync(username, password);
+}
+
+// Step 2: Remove the conflict markers (all &lt;&lt;&lt;, ===, &gt;&gt;&gt; lines)
+
+// Step 3: Check status
+git status
+
+// Step 4: Stage the resolved file
+git add src/auth.cs
+
+// Step 5: Commit the merge
+git commit -m "Merge main: resolve auth.cs conflict"
+
+// Step 6: continue with your work or push
+git push origin feature/user-authentication</code></pre>
+      </article>
+
+      <article>
+        <h3>Using Tools for Conflict Resolution</h3>
+        <pre><code># Use Visual Studio Code as the merge tool
+git config --global core.editor "code"
+
+# Configure a visual merge tool (e.g., Beyond Compare, KDiff3)
+git config --global merge.tool vscode
+git config --global mergetool.vscode.cmd "code --wait"
+
+# When a conflict occurs, launch the merge tool
+git mergetool
+
+# Abort a merge if it becomes too complicated
+git merge --abort
+
+# Or abort a pull
+git pull --abort</code></pre>
+        <p>Most IDEs like Visual Studio Code have built-in Git conflict resolution interfaces with visual comparisons, making it easier to choose the right version.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Branch Naming Conventions</h2>
+      <article>
+        <h3>Standard Branch Types</h3>
+        <pre><code># Development branch - where features merge before release
+git checkout -b develop
+git push origin develop
+
+# Feature branch - new functionality
+git checkout -b feature/user-authentication
+git checkout -b feature/payment-integration
+git checkout -b feature/export-to-csv
+
+# Bugfix branch - fixing bugs in development
+git checkout -b bugfix/login-validation-error
+git checkout -b bugfix/null-reference-exception
+
+# Hotfix branch - urgent fixes for production
+git checkout -b hotfix/security-patch
+git checkout -b hotfix/critical-data-loss
+
+# Version/Release branch - preparing a release
+git checkout -b release/v1.2.0
+git checkout -b release/2024-q1</code></pre>
+      </article>
+
+      <article>
+        <h3>Naming Best Practices</h3>
+        <ul>
+          <li><strong>Use lowercase:</strong> Branch names are case-sensitive; lowercase prevents confusion.</li>
+          <li><strong>Use hyphens, not underscores:</strong> <code>feature/user-auth</code> not <code>feature_user_auth</code>.</li>
+          <li><strong>Be descriptive:</strong> <code>feature/two-factor-auth</code> is better than <code>feature/auth</code>.</li>
+          <li><strong>Include ticket numbers if applicable:</strong> <code>feature/JIRA-123-user-profile</code>.</li>
+          <li><strong>Keep names concise:</strong> Avoid excessively long branch names.</li>
+          <li><strong>Avoid special characters:</strong> Stick to alphanumerics, hyphens, and slashes.</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Complete Branching Strategy Example</h3>
+        <pre><code># Main branch (production-ready)
+main
+  ↑
+  │ (PR: release/v1.2.0 → main)
+  │
+develop (staging/integration)
+  ├─ feature/user-authentication
+  │   └─ (regular sync: git rebase origin/develop)
+  │
+  ├─ feature/payment-integration
+  │   └─ (regular sync: git rebase origin/develop)
+  │
+  ├─ bugfix/login-validation
+  │   └─ (regular sync: git rebase origin/develop)
+  │
+  └─ release/v1.2.0
+      ↑
+      │ (after testing, this merges to main with tag v1.2.0)
+      │ (and back-merges to develop)
+
+hotfix/security-patch
+  ↑
+  │ (created from main for critical production fixes)
+  │ (merges back to main AND develop)</code></pre>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Complete Git Workflow Example</h2>
+      <article>
+        <h3>Scenario: Developing a Feature with Conflict Management</h3>
+        <pre><code># Day 1: Start a new feature
+git checkout -b feature/user-dashboard
+git push -u origin feature/user-dashboard
+
+# Day 2: After a few commits, sync with the team's latest work
+git fetch origin
+git rebase origin/develop  # or merge if you prefer
+# Fix any conflicts that arise
+
+# Day 3: Continue development, commit regularly
+git add src/Dashboard.cs
+git commit -m "Add dashboard layout and styling"
+
+# Day 4: Before finishing, sync one more time
+git fetch origin
+git rebase origin/develop  # Minimize conflicts in PR later
+
+# Day 5: Push the feature branch
+git push origin feature/user-dashboard
+
+# Create a Pull Request (PR) on GitHub/GitLab/Azure DevOps
+# Describe what the feature does and link any related issues
+
+# Peer review: Address feedback
+git add src/Dashboard.cs
+git commit -m "Address review feedback: improve accessibility"
+git push origin feature/user-dashboard  # PR updates automatically
+
+# After approval, merge the PR
+# Option A: Squash commits (cleaner history)
+# Option B: Create a merge commit (preserves feature history)
+# Option C: Rebase and fast-forward (linear history)
+
+# After merge, clean up
+git checkout develop
+git pull origin develop
+git branch -d feature/user-dashboard  # Delete local branch
+git push origin --delete feature/user-dashboard  # Delete remote branch</code></pre>
+      </article>
+
+      <article>
+        <h3>Handling a Merge Conflict During This Workflow</h3>
+        <pre><code># Day 4: When syncing, a conflict occurs
+git fetch origin
+git rebase origin/develop
+# CONFLICT (content): Merge conflict in src/Services/UserService.cs
+
+# Step 1: Check what files have conflicts
+git status
+
+# Step 2: Open the conflicted file and resolve
+# (Edit the file, remove conflict markers, keep the correct logic)
+
+# Step 3: Mark as resolved
+git add src/Services/UserService.cs
+
+# Step 4: Continue the rebase
+git rebase --continue
+
+# Step 5: If something goes wrong, abort and try --merge instead
+git rebase --abort
+git merge origin/develop
+# Resolve conflicts the same way
+
+# Step 6: Push with force (only because you rebased)
+git push origin feature/user-dashboard --force-with-lease</code></pre>
+        <p>Use <code>--force-with-lease</code> instead of <code>--force</code> because it's safer—it won't overwrite remote changes made by teammates.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Summary of Best Practices</h2>
+      <ul>
+        <li><strong>Fetch regularly:</strong> <code>git fetch origin</code> daily to stay aware of team changes.</li>
+        <li><strong>Sync your branch frequently:</strong> Merge or rebase the parent branch into your feature branch often.</li>
+        <li><strong>Commit frequently:</strong> Small, logical commits are easier to review and less prone to conflicts.</li>
+        <li><strong>Use descriptive branch names:</strong> Follow conventions like <code>feature/feature-name</code>, <code>bugfix/bug-name</code>, <code>hotfix/issue-name</code>.</li>
+        <li><strong>Keep feature branches short-lived:</strong> Aim to merge within a few days, not weeks or months.</li>
+        <li><strong>Resolve conflicts carefully:</strong> Take time to understand both versions before merging.</li>
+        <li><strong>Push with <code>--force-with-lease</code>:</strong> Safer than <code>--force</code> when dealing with rebased commits.</li>
+        <li><strong>Delete stale branches:</strong> Keep the repository clean after merging.</li>
+        <li><strong>Review PRs thoroughly:</strong> Prevent conflicts by catching integration issues early.</li>
+        <li><strong>Communicate with your team:</strong> If modifying the same files, coordinate or pair program to reduce conflicts.</li>
+      </ul>
+    </section>
+
+    <footer class="card next">
+      <h2>Key Takeaways</h2>
+      <p>Git branching is fundamental to collaborative development. By adopting consistent naming conventions, syncing frequently, and resolving conflicts methodically, you'll prevent the common nightmare of massive, complicated merge conflicts. The habit of fetching from the parent branch regularly is perhaps the single most important practice for reducing merge pain.</p>
+    </footer>
+  </main>
+</body>
+</html>

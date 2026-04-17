@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOLID Principles - Object-Oriented Design</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto;font-size:0.9rem}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}.principle-box{border:2px solid var(--brand);border-radius:8px;padding:16px;margin:16px 0;background:#f0fdf4}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Design Principles</span>
+      <h1>SOLID Principles</h1>
+      <p>Comprehensive guide to the five SOLID principles of object-oriented design. Learn how to write maintainable, flexible, and robust C# code that scales with changing requirements.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>What Are SOLID Principles?</h2>
+      <p>SOLID is an acronym for five design principles that help developers write better object-oriented code. These principles reduce code complexity, improve maintainability, and make systems easier to test and extend.</p>
+      <ul>
+        <li><strong>S</strong> — Single Responsibility Principle (SRP)</li>
+        <li><strong>O</strong> — Open/Closed Principle (OCP)</li>
+        <li><strong>L</strong> — Liskov Substitution Principle (LSP)</li>
+        <li><strong>I</strong> — Interface Segregation Principle (ISP)</li>
+        <li><strong>D</strong> — Dependency Inversion Principle (DIP)</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <div class="principle-box">
+        <h2>1. Single Responsibility Principle (SRP)</h2>
+        <p><strong>Definition:</strong> A class should have only one reason to change. It should have only one job or responsibility.</p>
+        <p><strong>In Plain English:</strong> Do one thing and do it well. If something has multiple reasons to change, split it up.</p>
+        <p><strong>Simple Explanation:</strong> Each class should have a single, well-defined purpose. When requirements change, only the class responsible for that change should be modified.</p>
+      </div>
+      <h3>✅ Principle in Action</h3>
+      <pre><code>// User: manages user data only
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+// UserRepository: handles database operations
+public interface IUserRepository
+{
+    Task SaveAsync(User user);
+    Task&lt;User&gt; GetByIdAsync(int id);
+}
+
+// EmailService: handles email notifications
+public interface IEmailService
+{
+    Task SendWelcomeEmailAsync(User user);
+}
+
+// Logger: handles logging
+public interface ILogger
+{
+    void Log(string message);
+}</code></pre>
+    </section>
+
+    <section class="card">
+      <div class="principle-box">
+        <h2>2. Open/Closed Principle (OCP)</h2>
+        <p><strong>Definition:</strong> Software entities should be open for extension but closed for modification. Add new functionality through inheritance or composition, not by modifying existing code.</p>
+        <p><strong>In Plain English:</strong> Build your code so you can add new features without changing what already works.</p>
+        <p><strong>Simple Explanation:</strong> Use abstraction and inheritance to extend functionality. When you need a new feature, create a new class that inherits from or implements an interface, rather than modifying the original class.</p>
+      </div>
+      <h3>✅ Principle in Action</h3>
+      <pre><code>// Define the contract
+public interface IPaymentProcessor
+{
+    Task ProcessAsync(decimal amount);
+}
+
+// Extend without modifying existing code
+public class CreditCardProcessor : IPaymentProcessor
+{
+    public async Task ProcessAsync(decimal amount) 
+    { /* Credit card logic */ }
+}
+
+public class PayPalProcessor : IPaymentProcessor
+{
+    public async Task ProcessAsync(decimal amount)
+    { /* PayPal logic */ }
+}
+
+public class StripeProcessor : IPaymentProcessor
+{
+    public async Task ProcessAsync(decimal amount)
+    { /* Stripe logic */ }
+}
+
+// To add a new processor, just create a new class
+public class ApplepayProcessor : IPaymentProcessor
+{
+    public async Task ProcessAsync(decimal amount)
+    { /* Apple Pay logic */ }
+}</code></pre>
+    </section>
+
+    <section class="card">
+      <div class="principle-box">
+        <h2>3. Liskov Substitution Principle (LSP)</h2>
+        <p><strong>Definition:</strong> Derived classes should be substitutable for their base classes. Objects of a derived type should substitute for their base type without breaking the contract.</p>
+        <p><strong>In Plain English:</strong> A subclass should be usable anywhere its parent class is used without breaking things.</p>
+        <p><strong>Simple Explanation:</strong> If class B is a subclass of class A, we should be able to replace A with B without affecting the behavior of the code. Don't violate the parent class contract.</p>
+      </div>
+      <h3>Understanding the Contract</h3>
+      <p>When a class inherits from a parent or implements an interface, it enters into a <strong>contract</strong>. The contract includes: expected behavior, preconditions, postconditions, and exceptions. The subclass must honor all of these.</p>
+      
+      <h3>❌ Common Violation: Rectangle/Square Problem</h3>
+      <pre><code>// Base class with a contract
+public class Rectangle
+{
+    protected int Width { get; set; }
+    protected int Height { get; set; }
+    
+    public void SetDimensions(int width, int height)
+    {
+        Width = width;
+        Height = height;
+    }
+    
+    public int GetArea() => Width * Height;
+}
+
+// Square violates the contract!
+// A square requires width == height, but Rectangle has no such constraint
+public class Square : Rectangle
+{
+    public new void SetDimensions(int width, int height)
+    {
+        // Violates LSP: Square enforces a constraint Rectangle doesn't have
+        Width = Height = Math.Max(width, height);
+    }
+}
+
+// This breaks client code expecting Rectangle behavior
+public void PrintRectangleInfo(Rectangle rect)
+{
+    rect.SetDimensions(5, 10);
+    Console.WriteLine($"Area: {rect.GetArea()}"); // Expects 50, but might get 100!
+    // If rect is actually a Square, area is 100 (10 * 10) - violates contract
+}
+
+Rectangle shape = new Square();
+PrintRectangleInfo(shape); // Breaks!</code></pre>
+
+      <h3>✅ Good: Design to the Contract</h3>
+      <pre><code>// Define clear contracts through interfaces
+public interface IShape
+{
+    int GetArea();
+}
+
+// Rectangle honors its contract
+public class Rectangle : IShape
+{
+    public int Width { get; set; }
+    public int Height { get; set; }
+    
+    public int GetArea() => Width * Height;
+}
+
+// Square is a separate type (not a Rectangle subclass)
+// It honors its own contract
+public class Square : IShape
+{
+    public int Side { get; set; }
+    
+    public int GetArea() => Side * Side;
+}
+
+// Client code works with the contract, not the implementation
+public void PrintShapeInfo(IShape shape)
+{
+    Console.WriteLine($"Area: {shape.GetArea()}");
+}
+
+// Both can be used interchangeably - LSP is honored
+PrintShapeInfo(new Rectangle { Width = 5, Height = 10 }); // Area: 50
+PrintShapeInfo(new Square { Side = 10 }); // Area: 100</code></pre>
+
+      <h3>✅ Better Example: Bird Hierarchy Done Right</h3>
+      <pre><code>// Define specific contracts
+public interface IFlyable
+{
+    void Fly();
+    int GetMaxAltitude();
+}
+
+public interface ISwimmable
+{
+    void Swim();
+    int GetMaxDepth();
+}
+
+// Sparrow can fly
+public class Sparrow : IFlyable
+{
+    public void Fly() => Console.WriteLine("Sparrow flying at 50 meters");
+    public int GetMaxAltitude() => 500;  // Sparrows fly up to 500 meters
+}
+
+// Penguin can swim but not fly
+public class Penguin : ISwimmable
+{
+    public void Swim() => Console.WriteLine("Penguin swimming");
+    public int GetMaxDepth() => 600;  // Penguins dive up to 600 meters
+}
+
+// Duck can do both
+public class Duck : IFlyable, ISwimmable
+{
+    public void Fly() => Console.WriteLine("Duck flying at 100 meters");
+    public int GetMaxAltitude() => 300;
+    public void Swim() => Console.WriteLine("Duck swimming");
+    public int GetMaxDepth() => 5;  // Ducks don't dive deep
+}
+
+// Usage: clients substitute based on contract
+public class FlyingShow
+{
+    public void ShowFlight(IFlyable bird)
+    {
+        bird.Fly();
+        Console.WriteLine($"Max altitude: {bird.GetMaxAltitude()}m");
+    }
+}
+
+public class SwimmingCompetition
+{
+    public void ShowSwimming(ISwimmable animal)
+    {
+        animal.Swim();
+        Console.WriteLine($"Max depth: {animal.GetMaxDepth()}m");
+    }
+}
+
+// All implementations are substitutable
+var show = new FlyingShow();
+show.ShowFlight(new Sparrow());  // Works
+show.ShowFlight(new Duck());     // Works
+show.ShowFlight(new Penguin()); // Won't compile - Penguin doesn't implement IFlyable
+
+var swimming = new SwimmingCompetition();
+swimming.ShowSwimming(new Penguin()); // Works
+swimming.ShowSwimming(new Duck());    // Works</code></pre>
+
+      <h3>Key Rules for LSP Compliance</h3>
+      <ul>
+        <li><strong>Don't strengthen preconditions:</strong> Don't require more than the parent class</li>
+        <li><strong>Don't weaken postconditions:</strong> Promise at least what the parent class promised</li>
+        <li><strong>Don't throw unexpected exceptions:</strong> Only throw exceptions the parent declares</li>
+        <li><strong>Don't add new state constraints:</strong> Don't restrict valid states the parent allows</li>
+        <li><strong>Use composition over inheritance:</strong> When in doubt, use interfaces instead of inheritance</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <div class="principle-box">
+        <h2>4. Interface Segregation Principle (ISP)</h2>
+        <p><strong>Definition:</strong> Many specific client interfaces are better than one general-purpose interface. Clients should not be forced to depend on interfaces they don't use.</p>
+        <p><strong>In Plain English:</strong> Don't make a class implement methods it doesn't need. Split big interfaces into smaller ones.</p>
+        <p><strong>Simple Explanation:</strong> Create several specific interfaces instead of one massive interface. This way, classes only need to implement the methods they actually use.</p>
+      </div>
+      
+      <h3>The Problem with Fat Interfaces</h3>
+      <p>When you create a single large interface with many methods, you force implementers to implement methods they may not need. This leads to:</p>
+      <ul>
+        <li>Bloated implementations with placeholder/dummy methods</li>
+        <li>Difficult testing and mocking (must satisfy all methods)</li>
+        <li>Unclear class responsibilities</li>
+        <li>Coupling between unrelated features</li>
+        <li>Wasted effort on methods that throw NotImplementedException</li>
+      </ul>
+
+      <h3>❌ Bad: Fat Interface (Multi-Function Printer)</h3>
+      <pre><code>// This interface is too broad - not all printers can do everything
+public interface IPrinter
+{
+    void Print(string document);
+    void Scan(string source);
+    void Fax(string destination);
+    void Photocopy(string source, string destination);
+}
+
+// A basic printer must implement methods it can't do
+public class BasicPrinter : IPrinter
+{
+    public void Print(string document)
+    {
+        Console.WriteLine($"Printing: {document}");
+    }
+    
+    public void Scan(string source)
+    {
+        throw new NotImplementedException("This printer cannot scan");
+    }
+    
+    public void Fax(string destination)
+    {
+        throw new NotImplementedException("This printer cannot fax");
+    }
+    
+    public void Photocopy(string source, string destination)
+    {
+        throw new NotImplementedException("This printer cannot photocopy");
+    }
+}
+
+// Client code using IPrinter interface
+public class DocumentProcessor
+{
+    private readonly IPrinter _printer;
+    
+    public DocumentProcessor(IPrinter printer)
+    {
+        _printer = printer; // Could be BasicPrinter, but we expect it does everything!
+    }
+    
+    public void ProcessDocument(string doc)
+    {
+        _printer.Print(doc);
+        // What if we try to call methods that aren't implemented?
+        _printer.Scan(doc); // Runtime error at 3am in production!
+    }
+}</code></pre>
+
+      <h3>✅ Good: Segregated Interfaces</h3>
+      <pre><code>// Define specific, focused interfaces
+public interface IPrintable
+{
+    void Print(string document);
+}
+
+public interface IScannable
+{
+    void Scan(string source);
+}
+
+public interface IFaxable
+{
+    void Fax(string destination);
+}
+
+public interface IPhotocopiable
+{
+    void Photocopy(string source, string destination);
+}
+
+// Basic printer only implements what it can do
+public class BasicPrinter : IPrintable
+{
+    public void Print(string document)
+    {
+        Console.WriteLine($"Printing: {document}");
+    }
+}
+
+// All-in-one printer implements all capabilities
+public class AllInOnePrinter : IPrintable, IScannable, IFaxable, IPhotocopiable
+{
+    public void Print(string document) 
+    { 
+        Console.WriteLine($"Printing: {document}"); 
+    }
+    
+    public void Scan(string source) 
+    { 
+        Console.WriteLine($"Scanning: {source}"); 
+    }
+    
+    public void Fax(string destination) 
+    { 
+        Console.WriteLine($"Faxing to: {destination}"); 
+    }
+    
+    public void Photocopy(string source, string destination) 
+    { 
+        Console.WriteLine($"Copying from {source} to {destination}"); 
+    }
+}
+
+// Client code is specific and type-safe
+public class DocumentPrinter
+{
+    private readonly IPrintable _printer;
+    
+    public DocumentPrinter(IPrintable printer)
+    {
+        _printer = printer; // Guaranteed to have Print() method
+    }
+    
+    public void PrintDocument(string doc)
+    {
+        _printer.Print(doc); // Always works - no exceptions
+    }
+}
+
+public class DocumentScanner
+{
+    private readonly IScannable _scanner;
+    
+    public DocumentScanner(IScannable scanner)
+    {
+        _scanner = scanner; // Guaranteed to have Scan() method
+    }
+    
+    public void ScanDocument(string source)
+    {
+        _scanner.Scan(source); // Always works - no exceptions
+    }
+}
+
+// Usage is type-safe and clear
+var basicPrinter = new BasicPrinter();
+var printer = new DocumentPrinter(basicPrinter);  // Works perfectly
+printer.PrintDocument("report.pdf");
+
+var allInOne = new AllInOnePrinter();
+var scanner = new DocumentScanner(allInOne);  // Works perfectly
+scanner.ScanDocument("page1.jpg");  // No exceptions
+
+// Compile-time safety: can't accidentally use wrong interface
+// var wrongScanner = new DocumentScanner(basicPrinter); // ERROR: basic printer is not IScannable</code></pre>
+
+      <h3>✅ Real-World Example: ASP.NET Core Services</h3>
+      <pre><code>// Bad: Generic service interface with everything
+public interface IUserService
+{
+    void Create(User user);
+    User GetById(int id);
+    void Update(User user);
+    void Delete(int id);
+    void SendEmail(User user, string message);
+    void LogActivity(User user, string activity);
+    void GenerateReport(int userId);
+}
+
+// Good: Segregated interfaces with single concerns
+public interface IUserRepository
+{
+    void Create(User user);
+    User GetById(int id);
+    void Update(User user);
+    void Delete(int id);
+}
+
+public interface IEmailService
+{
+    void SendEmail(User user, string message);
+}
+
+public interface IAuditLogger
+{
+    void LogActivity(User user, string activity);
+}
+
+public interface IReportGenerator
+{
+    void GenerateReport(int userId);
+}
+
+// Now each dependency is explicit and focused
+public class UserController
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IEmailService _emailService;
+
+    public UserController(IUserRepository userRepository, IEmailService emailService)
+    {
+        _userRepository = userRepository;
+        _emailService = emailService;
+    }
+
+    public void CreateUserAndNotify(User user, string welcomeMessage)
+    {
+        _userRepository.Create(user);
+        _emailService.SendEmail(user, welcomeMessage);
+    }
+}
+
+// Testing is simpler - mock only what you need
+public class UserControllerTests
+{
+    [Fact]
+    public void CreateUserAndNotify_SendsEmail()
+    {
+        // Can mock just IEmailService and IUserRepository separately
+        var mockRepo = new Mock<IUserRepository>();
+        var mockEmail = new Mock<IEmailService>();
+        
+        var controller = new UserController(mockRepo.Object, mockEmail.Object);
+        var user = new User { Id = 1, Name = "John" };
+        
+        controller.CreateUserAndNotify(user, "Welcome!");
+        
+        mockEmail.Verify(x => x.SendEmail(user, "Welcome!"), Times.Once);
+    }
+}</code></pre>
+
+      <h3>Benefits of Interface Segregation</h3>
+      <ul>
+        <li><strong>Clearer Dependencies:</strong> Each class expresses exactly what it needs</li>
+        <li><strong>Easier Testing:</strong> Mock only the interfaces you use</li>
+        <li><strong>Flexible Composition:</strong> Classes can implement multiple focused interfaces</li>
+        <li><strong>Reduced Coupling:</strong> Changes to one capability don't ripple through</li>
+        <li><strong>Better Type Safety:</strong> Compiler prevents using wrong interfaces</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <div class="principle-box">
+        <h2>5. Dependency Inversion Principle (DIP)</h2>
+        <p><strong>Definition:</strong> High-level modules should not depend on low-level modules. Both should depend on abstractions. Abstractions should not depend on details; details should depend on abstractions.</p>
+        <p><strong>In Plain English:</strong> Don't let your code directly depend on low-level implementation details. Use interfaces as contracts.</p>
+        <p><strong>Simple Explanation:</strong> Your business logic should depend on abstractions (interfaces), not on concrete implementations. This makes it easy to swap implementations without changing your core logic.</p>
+      </div>
+      <h3>❌ Bad: High-Level Depends on Low-Level</h3>
+      <pre><code>// Low-level: database implementation
+public class MySqlDatabase
+{
+    public void Save(string data) 
+    { /* Save to MySQL */ }
+}
+
+// High-level: business logic depends directly on low-level
+public class OrderService
+{
+    private MySqlDatabase _database = new MySqlDatabase();
+    
+    public void CreateOrder(Order order)
+    {
+        // If we want to switch databases, we must change OrderService
+        _database.Save(order.ToString());
+    }
+}</code></pre>
+      <h3>✅ Good: Both Depend on Abstractions</h3>
+      <pre><code>// Define abstraction
+public interface IDatabase
+{
+    Task SaveAsync(string data);
+    Task&lt;string&gt; LoadAsync(string id);
+}
+
+// Low-level: implement the abstraction
+public class MySqlDatabase : IDatabase
+{
+    public async Task SaveAsync(string data) 
+    { /* MySQL implementation */ }
+    public async Task&lt;string&gt; LoadAsync(string id) 
+    { /* MySQL query */ }
+}
+
+// Alternative low-level implementation
+public class PostgresDatabase : IDatabase
+{
+    public async Task SaveAsync(string data) 
+    { /* PostgreSQL implementation */ }
+    public async Task&lt;string&gt; LoadAsync(string id) 
+    { /* PostgreSQL query */ }
+}
+
+// High-level: depends only on abstraction
+public class OrderService
+{
+    private readonly IDatabase _database;
+    
+    // Dependency is injected - no hard dependency on MySQL
+    public OrderService(IDatabase database)
+    {
+        _database = database;
+    }
+    
+    public async Task CreateOrderAsync(Order order)
+    {
+        await _database.SaveAsync(order.ToString());
+    }
+}
+
+// Usage: can switch databases without touching OrderService
+var mySqlDb = new MySqlDatabase();
+var postgresDb = new PostgresDatabase();
+
+var service1 = new OrderService(mySqlDb); // Uses MySQL
+var service2 = new OrderService(postgresDb); // Uses PostgreSQL</code></pre>
+    </section>
+
+    <section class="card">
+      <h2>All Five Principles Together</h2>
+      <pre><code>// Complete example: Order processing system following all SOLID principles
+
+// S - Single Responsibility
+public class Order
+{
+    public int Id { get; set; }
+    public List&lt;OrderItem&gt; Items { get; set; }
+    public decimal Total { get; set; }
+}
+
+// O & D - Open/Closed and Dependency Inversion
+public interface IPaymentProcessor
+{
+    Task ProcessAsync(decimal amount);
+}
+
+public interface IEmailNotifier
+{
+    Task SendOrderConfirmationAsync(Order order);
+}
+
+public interface IOrderRepository
+{
+    Task SaveAsync(Order order);
+}
+
+// L & I - Liskov Substitution and Interface Segregation
+public class CreditCardPaymentProcessor : IPaymentProcessor
+{
+    public async Task ProcessAsync(decimal amount)
+    {
+        // Process credit card payment
+        await Task.Delay(100); // Simulate API call
+    }
+}
+
+public class SmtpEmailNotifier : IEmailNotifier
+{
+    public async Task SendOrderConfirmationAsync(Order order)
+    {
+        // Send email via SMTP
+        await Task.Delay(50);
+    }
+}
+
+public class SqlOrderRepository : IOrderRepository
+{
+    public async Task SaveAsync(Order order)
+    {
+        // Save to database
+        await Task.Delay(50);
+    }
+}
+
+// High-level orchestrator depending on abstractions
+public class OrderService
+{
+    private readonly IOrderRepository _repository;
+    private readonly IPaymentProcessor _paymentProcessor;
+    private readonly IEmailNotifier _emailNotifier;
+
+    public OrderService(
+        IOrderRepository repository,
+        IPaymentProcessor paymentProcessor,
+        IEmailNotifier emailNotifier)
+    {
+        _repository = repository;
+        _paymentProcessor = paymentProcessor;
+        _emailNotifier = emailNotifier;
+    }
+
+    public async Task ProcessOrderAsync(Order order)
+    {
+        // Process payment
+        await _paymentProcessor.ProcessAsync(order.Total);
+        
+        // Save order
+        await _repository.SaveAsync(order);
+        
+        // Send confirmation
+        await _emailNotifier.SendOrderConfirmationAsync(order);
+    }
+}</code></pre>
+    </section>
+
+    <section class="card">
+      <h2>Key Benefits of SOLID</h2>
+      <ul>
+        <li><strong>Maintainability:</strong> Code is easier to understand and modify</li>
+        <li><strong>Testability:</strong> Dependencies can be mocked for unit testing</li>
+        <li><strong>Flexibility:</strong> New features can be added without modifying existing code</li>
+        <li><strong>Reusability:</strong> Components with single responsibilities are easily reused</li>
+        <li><strong>Scalability:</strong> Systems grow without becoming overly complex</li>
+        <li><strong>Collaboration:</strong> Multiple developers can work on different components independently</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Common Pitfalls</h2>
+      <ul>
+        <li><strong>Over-engineering:</strong> Don't apply SOLID to trivial scripts or one-off utilities</li>
+        <li><strong>Too many abstractions:</strong> Each interface/class should have a clear purpose</li>
+        <li><strong>Ignoring context:</strong> SOLID is a guide, not absolute law; pragmatism matters</li>
+        <li><strong>Callback hell:</strong> Over-reliance on dependency injection can make code hard to trace</li>
+        <li><strong>Performance:</strong> Abstraction layers add a small performance cost; balance with benefits</li>
+      </ul>
+    </section>
+
+    <footer class="card next">
+      <h2>Summary</h2>
+      <p>SOLID principles are foundational to professional software engineering. They guide you toward code that is maintainable, testable, and adaptable to change. While they may seem verbose initially, the long-term benefits of following them far outweigh the short-term effort. Start with understanding each principle, apply them gradually in your projects, and they will become second nature.</p>
+    </footer>
+  </main>
+</body>
+</html>
