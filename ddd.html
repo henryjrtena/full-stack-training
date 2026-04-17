@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Domain-Driven Design (DDD) in .NET 8</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#a0aec0;padding:16px;border-radius:8px;overflow-x:auto;font-size:.9rem;line-height:1.4}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}.concept{border:2px solid var(--brand);border-radius:8px;padding:16px;margin:16px 0;background:#f0fdf4}.diagram{background:var(--code);color:#a0aec0;padding:16px;border-radius:8px;font-family:monospace;overflow-x:auto;margin:16px 0;line-height:1.4}.folder{display:block;margin:8px 0;padding-left:20px}.warning{border-left:5px solid #dc2626;padding:16px;margin:16px 0;background:#fef2f2}.success{border-left:5px solid var(--brand);padding:16px;margin:16px 0;background:#f0fdf4}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Architecture Pattern</span>
+      <h1>Domain-Driven Design (DDD) in .NET 8</h1>
+      <p>Master the fundamentals of Domain-Driven Design and learn how to architect complex ASP.NET Core applications using DDD principles. Includes real-world project structure, code examples, and best practices.</p>
+    </section>
+  </header>
+
+  <main class="wrap">
+    <!-- MODULE 1 -->
+    <section class="card">
+      <h2>1. Introduction to Domain-Driven Design</h2>
+      
+      <h3>What is DDD?</h3>
+      <p>Domain-Driven Design is a software development philosophy that places <strong>business logic at the center</strong> of your application. Instead of starting with databases and ORM models, DDD starts by deeply understanding the business domain and encoding that understanding directly into code.</p>
+
+      <h3>CRUD Mindset vs DDD Mindset</h3>
+      <p><strong>Traditional CRUD Approach:</strong></p>
+      <pre><code>// Entity is just a data container
+public class User
+{
+    public int Id { get; set; }
+    public string Email { get; set; }
+    public string Name { get; set; }
+}</code></pre>
+
+      <p><strong>DDD Approach:</strong></p>
+      <pre><code>// Entity encapsulates business rules
+public class User
+{
+    public UserId Id { get; private set; }
+    public Email Email { get; private set; }
+    public UserName Name { get; private set; }
+
+    public void ChangeEmail(Email newEmail)
+    {
+        if (newEmail == null)
+            throw new DomainException("Email is required");
+        
+        Email = newEmail;
+    }
+}</code></pre>
+
+      <h3>Why DDD Exists</h3>
+      <ul>
+        <li><strong>Scattered Business Logic:</strong> Rules end up in controllers, services, validators everywhere</li>
+        <li><strong>Difficult to Change:</strong> Business rules hidden across layers make refactoring risky</li>
+        <li><strong>Hard to Test:</strong> Logic entangled with frameworks is difficult to unit test</li>
+        <li><strong>Lost Intent:</strong> Code tells you WHAT it does, not WHY from business perspective</li>
+        <li><strong>Scaling Issues:</strong> Simple CRUD becomes unmaintainable as requirements grow</li>
+      </ul>
+
+      <h3>When to Use DDD ✅</h3>
+      <div class="success">
+        <ul>
+          <li>Complex business domains with rich rules</li>
+          <li>Frequent requirement changes expected</li>
+          <li>Long-term projects (2+ years)</li>
+          <li>Team collaboration with domain experts needed</li>
+          <li>Critical business applications</li>
+        </ul>
+      </div>
+
+      <h3>When NOT to Use DDD ❌</h3>
+      <div class="warning">
+        <ul>
+          <li>Simple CRUD apps (blogs, dashboards, CMS)</li>
+          <li>Prototypes and MVPs</li>
+          <li>Limited business logic</li>
+          <li>Small teams unfamiliar with OOP patterns</li>
+          <li>Real-time dashboards showing data</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- MODULE 2 -->
+    <section class="card">
+      <h2>2. Core DDD Concepts</h2>
+
+      <div class="concept">
+        <h3>Entity</h3>
+        <p><strong>Definition:</strong> Object with unique identity. Two entities with same data but different IDs are different.</p>
+        <p><strong>Analogy:</strong> People have IDs (SSN). Two people with same name are different due to different IDs.</p>
+        <pre><code>public class Todo
+{
+    public TodoId Id { get; private set; }
+    public string Title { get; private set; }
+    public TodoStatus Status { get; private set; }
+
+    // Equals based on ID, not data
+    public override bool Equals(object? obj) =>
+        obj is Todo other && Id == other.Id;
+}</code></pre>
+      </div>
+
+      <div class="concept">
+        <h3>Value Object</h3>
+        <p><strong>Definition:</strong> Object without identity, compared by value, immutable.</p>
+        <p><strong>Analogy:</strong> Money. Two $10 bills are equal; it doesn't matter which one.</p>
+        <pre><code>public class Email
+{
+    public string Value { get; }
+
+    public Email(string value)
+    {
+        if (!IsValidEmail(value))
+            throw new DomainException("Invalid email");
+        Value = value;
+    }
+
+    public override bool Equals(object? obj) =>
+        obj is Email e && e.Value == Value;
+}</code></pre>
+      </div>
+
+      <div class="concept">
+        <h3>Aggregate & Aggregate Root</h3>
+        <p><strong>Definition:</strong> Group of entities/value objects with a root. Root controls access.</p>
+        <p><strong>Analogy:</strong> Car (root) contains engine, wheels, doors. You modify car, car manages parts.</p>
+        <pre><code>public class TodoList  // Aggregate Root
+{
+    public TodoListId Id { get; private set; }
+    
+    private List<Todo> _todos = new();
+    public IReadOnlyList<Todo> Todos => _todos.AsReadOnly();
+
+    public void AddTodo(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new DomainException("Title required");
+        
+        _todos.Add(new Todo(TodoId.Create(), title));
+    }
+
+    // Direct access to _todos is prevented
+}</code></pre>
+      </div>
+
+      <div class="concept">
+        <h3>Repository</h3>
+        <p><strong>Definition:</strong> Abstract data access. Makes aggregates available like a collection.</p>
+        <p><strong>Analogy:</strong> Librarian retrieves books; you don't access the catalog directly.</p>
+        <pre><code>// Domain layer - interface only
+public interface ITodoListRepository
+{
+    Task<TodoList?> GetByIdAsync(TodoListId id);
+    Task SaveAsync(TodoList todoList);
+}
+
+// Infrastructure layer - implementation
+public class TodoListRepository : ITodoListRepository
+{
+    private readonly AppDbContext _db;
+    
+    public async Task<TodoList?> GetByIdAsync(TodoListId id)
+    {
+        // EF Core implementation
+        var entity = await _db.TodoLists.FirstOrDefaultAsync(x => x.Id == id.Value);
+        return entity?.ToDomain();
+    }
+}</code></pre>
+      </div>
+
+      <div class="concept">
+        <h3>Domain Service</h3>
+        <p><strong>Definition:</strong> Stateless service with business logic that spans aggregates.</p>
+        <p><strong>Analogy:</strong> Bank teller handles transfers between accounts (two aggregates).</p>
+        <pre><code>public class TodoTransferService
+{
+    private readonly ITodoListRepository _repo;
+
+    public async Task TransferAsync(
+        TodoListId from, 
+        TodoListId to, 
+        TodoId todoId)
+    {
+        var fromList = await _repo.GetByIdAsync(from);
+        var toList = await _repo.GetByIdAsync(to);
+
+        fromList?.RemoveTodo(todoId);
+        toList?.AddTodo(todoId);
+
+        await _repo.SaveAsync(fromList!);
+        await _repo.SaveAsync(toList!);
+    }
+}</code></pre>
+      </div>
+
+      <div class="concept">
+        <h3>Application Service</h3>
+        <p><strong>Definition:</strong> Orchestrates domain objects. Receives DTOs from controllers, returns DTOs.</p>
+        <p><strong>Analogy:</strong> Restaurant manager. Takes order (DTO), tells kitchen (domain) what to do.</p>
+        <pre><code>// Application layer
+public class CreateTodoUseCase
+{
+    private readonly ITodoListRepository _repo;
+
+    public async Task<TodoDto> ExecuteAsync(CreateTodoRequest request)
+    {
+        // Load aggregate
+        var todoList = await _repo.GetByIdAsync(request.ListId);
+        
+        // Use domain logic
+        todoList.AddTodo(request.Title);
+        
+        // Save
+        await _repo.SaveAsync(todoList);
+        
+        // Return DTO
+        return new TodoDto { Id = todoList.Id, Title = request.Title };
+    }
+}</code></pre>
+      </div>
+
+      <div class="concept">
+        <h3>Bounded Context</h3>
+        <p><strong>Definition:</strong> Explicit boundary where domain language and models are consistent.</p>
+        <p><strong>Analogy:</strong> Hospital has "Cardiology" and "Surgery" departments. "Patient" means different things in each context.</p>
+        <pre><code>// Billing Bounded Context
+public class Invoice  // Entity in Billing context
+{
+    public InvoiceId Id { get; set; }
+    public decimal Amount { get; set; }
+}
+
+// Medical Records Bounded Context
+public class MedicalRecord  // Entity in Medical context
+{
+    public RecordId Id { get; set; }
+    public string Diagnosis { get; set; }
+}</code></pre>
+      </div>
+
+      <div class="concept">
+        <h3>Ubiquitous Language</h3>
+        <p><strong>Definition:</strong> Shared vocabulary between developers and domain experts.</p>
+        <p><strong>Example:</strong> Not "CreateTodo" but "AssignTask" if that's the business term.</p>
+        <pre><code>// Good: reflects business language
+namespaceOrderManagement {
+    public class Order { ... }
+    public class LineItem { ... }
+    public void PlaceOrder() { ... }
+}
+
+// Bad: generic names hide intent
+namespace Generic {
+    public class Document { ... }
+    public void Process() { ... }
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- MODULE 3 -->
+    <section class="card">
+      <h2>3. DDD vs Traditional Architecture</h2>
+
+      <h3>Architectural Comparison</h3>
+      <div class="diagram">Layered (Traditional CRUD)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┌─ Presentation Layer (Controllers)
+├─ Business Logic Layer (Services)
+├─ Data Access Layer (Repositories)
+└─ Database
+
+Clean Architecture
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┌─ Web Layer (Controllers)
+├─ App Layer (Interfaces)
+├─ Domain Layer (Business Rules)
+├─ Infrastructure Layer (DB, API calls)
+└─ Database
+
+Domain-Driven Design
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        ┌─────────────┐
+        │ Presentation│
+        │(Controllers)│
+        └──────┬──────┘
+               ↓
+        ┌─────────────┐
+        │ Application │ (Commands/Queries)
+        │  (Use Cases)│
+        └──────┬──────┘
+               ↓
+        ┌─────────────────────────┐
+        │      DOMAIN LAYER       │ ← Pure Business
+        │ (Entities, Aggregates,  │   Logic
+        │  Domain Services)       │   (No frameworks)
+        └──────┬──────────────────┘
+               ↓
+        ┌─────────────┐
+        │Infrastructure│ (EF Core, DB)
+        └─────────────┘
+      </div>
+
+      <h3>Key Differences</h3>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+        <tr style="background:#f0fdf4;">
+          <th style="border:1px solid var(--line);padding:12px;text-align:left;">Aspect</th>
+          <th style="border:1px solid var(--line);padding:12px;text-align:left;">Layered</th>
+          <th style="border:1px solid var(--line);padding:12px;text-align:left;">Clean</th>
+          <th style="border:1px solid var(--line);padding:12px;text-align:left;">DDD</th>
+        </tr>
+        <tr>
+          <td style="border:1px solid var(--line);padding:12px;">Focus</td>
+          <td style="border:1px solid var(--line);padding:12px;">Data operations</td>
+          <td style="border:1px solid var(--line);padding:12px;">Independence</td>
+          <td style="border:1px solid var(--line);padding:12px;">Business domain</td>
+        </tr>
+        <tr style="background:#f8fafc;">
+          <td style="border:1px solid var(--line);padding:12px;">Domain Logic</td>
+          <td style="border:1px solid var(--line);padding:12px;">Scattered</td>
+          <td style="border:1px solid var(--line);padding:12px;">Core</td>
+          <td style="border:1px solid var(--line);padding:12px;">Central & Pure</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid var(--line);padding:12px;">Testability</td>
+          <td style="border:1px solid var(--line);padding:12px;">Medium</td>
+          <td style="border:1px solid var(--line);padding:12px;">High</td>
+          <td style="border:1px solid var(--line);padding:12px;">Very High</td>
+        </tr>
+        <tr style="background:#f8fafc;">
+          <td style="border:1px solid var(--line);padding:12px;">Scalability</td>
+          <td style="border:1px solid var(--line);padding:12px;">Low</td>
+          <td style="border:1px solid var(--line);padding:12px;">High</td>
+          <td style="border:1px solid var(--line);padding:12px;">Very High</td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- MODULE 4 -->
+    <section class="card">
+      <h2>4. .NET 8 DDD Project Structure</h2>
+
+      <h3>📦 TodoApp.Domain</h3>
+      <pre><code>TodoApp.Domain/
+├── Entities/
+│   ├── User.cs
+│   └── Todo.cs
+├── ValueObjects/
+│   ├── Email.cs
+│   └── TodoId.cs
+├── Aggregates/
+│   └── TodoList.cs (Root)
+├── Interfaces/
+│   └── ITodoListRepository.cs
+├── DomainServices/
+│   └── TodoTransferService.cs
+└── Exceptions/
+    └── DomainException.cs</code></pre>
+      <p><strong>Rules:</strong> Zero dependencies. No EF Core, no ASP.NET, no databases.</p>
+
+      <h3>📦 TodoApp.Application</h3>
+      <pre><code>TodoApp.Application/
+├── Dtos/
+│   ├── CreateTodoRequest.cs
+│   ├── UpdateTodoRequest.cs
+│   └── TodoDto.cs
+├── UseCases/
+│   ├── CreateTodoUseCase.cs
+│   ├── CompleteTodoUseCase.cs
+│   └── GetTodosUseCase.cs
+└── Interfaces/
+    └── ITodoListRepository.cs (re-export from Domain)</code></pre>
+      <p><strong>Rules:</strong> Depends only on Domain. No HTTP, no database, no UI logic.</p>
+
+      <h3>📦 TodoApp.Infrastructure</h3>
+      <pre><code>TodoApp.Infrastructure/
+├── Repositories/
+│   └── TodoListRepository.cs
+├── Data/
+│   ├── AppDbContext.cs
+│   └── Configurations/
+│       └── TodoListConfiguration.cs
+├── Extensions/
+│   └── MappingExtensions.cs
+└── DependencyInjection.cs</code></pre>
+      <p><strong>Rules:</strong> EF Core lives here. Implements domain interfaces.</p>
+
+      <h3>🌐 TodoApp.Web</h3>
+      <pre><code>TodoApp.Web/
+├── Controllers/
+│   └── TodosController.cs
+├── Program.cs (DI setup)
+└── appsettings.json</code></pre>
+      <p><strong>Rules:</strong> Entry point only. Minimal logic. Depends on everything.</p>
+    </section>
+
+    <!-- MODULE 5 -->
+    <section class="card">
+      <h2>5. Base Types: IEntity & IValueObject</h2>
+
+      <h3>Why Base Interfaces?</h3>
+      <p>Creating base interfaces for entities and value objects provides a common contract, makes code more discoverable, and enables generic repository patterns. They enforce DDD principles across your domain model.</p>
+
+      <h3>IValueObject Interface</h3>
+      <pre><code>// Base interface for all value objects
+public interface IValueObject
+{
+    // Marker interface - enforces immutability through convention
+    // Value objects must override Equals and GetHashCode
+}
+
+// Base abstract class (optional, but recommended)
+public abstract class ValueObject : IValueObject
+{
+    // Ensure value objects are compared by all properties
+    public override bool Equals(object? obj)
+    {
+        if (obj == null || obj.GetType() != GetType())
+            return false;
+
+        var valueObject = (ValueObject)obj;
+        return GetAtomicValues().SequenceEqual(valueObject.GetAtomicValues());
+    }
+
+    public override int GetHashCode()
+    {
+        return GetAtomicValues()
+            .Select(x => x?.GetHashCode() ?? 0)
+            .Aggregate((x, y) => x ^ y);
+    }
+
+    // Override in subclass to return properties to compare
+    protected abstract IEnumerable<object?> GetAtomicValues();
+
+    public static bool operator ==(ValueObject? left, ValueObject? right)
+    {
+        if (Equals(left, null) ^ Equals(right, null))
+            return false;
+
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(ValueObject? left, ValueObject? right)
+    {
+        return !(left == right);
+    }
+}</code></pre>
+
+      <h3>IEntity Interface</h3>
+      <pre><code>// Base interface for all entities
+public interface IEntity
+{
+    // Entities have identity, typically defined in subclasses
+}
+
+// Generic base class for entities with ID
+public abstract class Entity<TId> : IEntity where TId : notnull
+{
+    public TId Id { get; protected set; }
+
+    protected Entity(TId id)
+    {
+        if (Equals(id, default))
+            throw new DomainException("ID cannot be empty");
+
+        Id = id;
+    }
+
+    // Entities compared by ID
+    public override bool Equals(object? obj)
+    {
+        if (obj is not Entity<TId> entity)
+            return false;
+
+        return Equals(entity.Id, Id);
+    }
+
+    public override int GetHashCode()
+    {
+        return Id.GetHashCode();
+    }
+
+    public static bool operator ==(Entity<TId>? left, Entity<TId>? right)
+    {
+        if (Equals(left, null) ^ Equals(right, null))
+            return false;
+
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(Entity<TId>? left, Entity<TId>? right)
+    {
+        return !(left == right);
+    }
+}</code></pre>
+
+      <h3>Usage Example</h3>
+      <pre><code>// Value Object using base class
+public class Email : ValueObject
+{
+    public string Value { get; }
+
+    public Email(string value)
+    {
+        if (!IsValidEmail(value))
+            throw new DomainException("Invalid email");
+
+        Value = value;
+    }
+
+    protected override IEnumerable<object?> GetAtomicValues()
+    {
+        yield return Value;
+    }
+
+    private static bool IsValidEmail(string email) =>
+        email.Contains("@") && email.Length > 5;
+}
+
+// Entity using base class
+public class Todo : Entity<TodoId>
+{
+    public string Title { get; private set; }
+    public TodoStatus Status { get; private set; }
+
+    public Todo(TodoId id, string title) : base(id)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new DomainException("Title required");
+
+        Title = title;
+        Status = TodoStatus.Pending;
+    }
+
+    public void MarkComplete()
+    {
+        if (Status == TodoStatus.Completed)
+            throw new DomainException("Already completed");
+
+        Status = TodoStatus.Completed;
+    }
+}</code></pre>
+
+      <h3>Benefits</h3>
+      <ul>
+        <li><strong>Consistency:</strong> All entities/value objects follow same equality rules</li>
+        <li><strong>Less Boilerplate:</strong> Inherit equality logic instead of repeating</li>
+        <li><strong>Type Safety:</strong> Generic constraints ensure proper ID types</li>
+        <li><strong>Testability:</strong> Easy to compare entities and value objects in tests</li>
+        <li><strong>Discoverability:</strong> Developers know where to look for domain types</li>
+      </ul>
+    </section>
+
+    <!-- MODULE 6 -->
+    <section class="card">
+      <h2>6. Complete Code Flow Example</h2>
+
+      <h3>Create Todo Scenario</h3>
+      <p><strong>Flow:</strong> Controller → UseCase → Domain → Repository → Database</p>
+
+      <h3>1️⃣ Domain Layer Using Base Classes</h3>
+      <pre><code>// Value Objects
+public class TodoId : ValueObject
+{
+    public Guid Value { get; }
+
+    private TodoId(Guid value) => Value = value;
+
+    public static TodoId Create() => new(Guid.NewGuid());
+
+    protected override IEnumerable<object?> GetAtomicValues()
+    {
+        yield return Value;
+    }
+}
+
+public class UserId : ValueObject
+{
+    public Guid Value { get; }
+
+    public UserId(Guid value)
+    {
+        if (value == Guid.Empty)
+            throw new DomainException("Invalid user ID");
+
+        Value = value;
+    }
+
+    protected override IEnumerable<object?> GetAtomicValues()
+    {
+        yield return Value;
+    }
+}
+
+// Entity
+public class Todo : Entity<TodoId>
+{
+    public string Title { get; private set; }
+    public string? Description { get; private set; }
+    public TodoStatus Status { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+
+    public Todo(TodoId id, string title) : base(id)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new DomainException("Title required");
+
+        Title = title;
+        Status = TodoStatus.Pending;
+        CreatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateTitle(string newTitle)
+    {
+        if (string.IsNullOrWhiteSpace(newTitle))
+            throw new DomainException("Title cannot be empty");
+
+        Title = newTitle;
+    }
+
+    public void MarkComplete()
+    {
+        if (Status == TodoStatus.Completed)
+            throw new DomainException("Already completed");
+
+        Status = TodoStatus.Completed;
+    }
+}
+
+// Aggregate Root
+public class TodoList : Entity<TodoListId>
+{
+    public UserId OwnerId { get; private set; }
+    public string Name { get; private set; }
+
+    private List<Todo> _todos = new();
+    public IReadOnlyList<Todo> Todos => _todos.AsReadOnly();
+
+    public TodoList(TodoListId id, UserId ownerId, string name) 
+        : base(id)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("Name required");
+
+        OwnerId = ownerId;
+        Name = name;
+    }
+
+    public void AddTodo(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new DomainException("Title required");
+
+        var todo = new Todo(TodoId.Create(), title);
+        _todos.Add(todo);
+    }
+
+    public void CompleteTodo(TodoId todoId)
+    {
+        var todo = _todos.FirstOrDefault(t => t.Id == todoId);
+        if (todo == null)
+            throw new DomainException("Todo not found");
+
+        todo.MarkComplete();
+    }
+
+    public void RemoveTodo(TodoId todoId)
+    {
+        var todo = _todos.FirstOrDefault(t => t.Id == todoId);
+        if (todo == null)
+            throw new DomainException("Todo not found");
+
+        _todos.Remove(todo);
+    }
+}
+
+// Repository Interface
+public interface ITodoListRepository : IRepository<TodoList, TodoListId>
+{
+    Task<TodoList?> GetByIdAsync(TodoListId id);
+    Task<IEnumerable<TodoList>> GetByOwnerAsync(UserId ownerId);
+    Task SaveAsync(TodoList todoList);
+    Task DeleteAsync(TodoListId id);
+}
+
+// Generic Repository Interface
+public interface IRepository<TAggregate, TId> where TAggregate : Entity<TId> where TId : notnull
+{
+    Task<TAggregate?> GetByIdAsync(TId id);
+    Task SaveAsync(TAggregate aggregate);
+}</code></pre>
+
+      <h3>2️⃣ Application Layer (TodoApp.Application)</h3>
+      <pre><code>// DTOs
+public class CreateTodoRequest
+{
+    public Guid ListId { get; set; }
+    public string Title { get; set; }
+}
+
+public class TodoDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; }
+    public string Status { get; set; }
+}
+
+// UseCase
+public class CreateTodoUseCase
+{
+    private readonly ITodoListRepository _repository;
+
+    public CreateTodoUseCase(ITodoListRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<TodoDto> ExecuteAsync(CreateTodoRequest request)
+    {
+        // Load aggregate
+        var todoList = await _repository.GetByIdAsync(
+            new TodoListId(request.ListId));
+        
+        if (todoList == null)
+            throw new ApplicationException("TodoList not found");
+
+        // Use domain logic
+        todoList.AddTodo(request.Title);
+
+        // Save
+        await _repository.SaveAsync(todoList);
+
+        //Return DTO
+        var newTodo = todoList.Todos.Last();
+        return new TodoDto 
+        { 
+            Id = newTodo.Id.Value,
+            Title = newTodo.Title,
+            Status = newTodo.Status.ToString()
+        };
+    }
+}</code></pre>
+
+      <h3>3️⃣ Infrastructure Layer (TodoApp.Infrastructure)</h3>
+      <pre><code>// EF Core DbContext
+public class AppDbContext : DbContext
+{
+    public DbSet<TodoList> TodoLists { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        builder.Entity<TodoList>().HasKey(x => x.Id);
+        builder.Entity<TodoList>()
+            .Property(x => x.Id)
+            .HasConversion(x => x.Value, x => new TodoListId(x));
+    }
+}
+
+// Repository Implementation
+public class TodoListRepository : ITodoListRepository
+{
+    private readonly AppDbContext _db;
+
+    public TodoListRepository(AppDbContext db)
+    {
+        _db = db;
+    }
+
+    public async Task<TodoList?> GetByIdAsync(TodoListId id)
+    {
+        return await _db.TodoLists
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task SaveAsync(TodoList todoList)
+    {
+        _db.TodoLists.Update(todoList);
+        await _db.SaveChangesAsync();
+    }
+}</code></pre>
+
+      <h3>4️⃣ Web Layer (TodoApp.Web)</h3>
+      <pre><code>// Program.cs Setup
+var builder = WebApplication.CreateBuilder(args);
+
+// Register services
+builder.Services.AddScoped<ITodoListRepository, TodoListRepository>();
+builder.Services.AddScoped<CreateTodoUseCase>();
+builder.Services.AddDbContext<AppDbContext>(
+    opts => opts.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+var app = builder.Build();
+
+// Controller
+[ApiController]
+[Route("api/[controller]")]
+public class TodosController : ControllerBase
+{
+    private readonly CreateTodoUseCase _createUseCase;
+
+    public TodosController(CreateTodoUseCase createUseCase)
+    {
+        _createUseCase = createUseCase;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(CreateTodoRequest request)
+    {
+        var result = await _createUseCase.ExecuteAsync(request);
+        return Ok(result);
+    }
+}</code></pre>
+    </section>
+
+    <!-- MODULE 7 -->
+    <section class="card">
+      <h2>7. .NET 8 Dependency Injection Setup</h2>
+
+      <h3>Program.cs Complete Setup</h3>
+      <pre><code>using TodoApp.Infrastructure;
+using TodoApp.Application;
+using TodoApp.Domain;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services
+builder.Services.AddDbContext<AppDbContext>(
+    opts => opts.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Domain repositories
+builder.Services.AddScoped<ITodoListRepository, TodoListRepository>();
+
+// Domain services
+builder.Services.AddScoped<TodoTransferService>();
+
+// Application use cases
+builder.Services.AddScoped<CreateTodoUseCase>();
+builder.Services.AddScoped<CompleteTodoUseCase>();
+builder.Services.AddScoped<GetTodosUseCase>();
+
+// Web
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();</code></pre>
+
+      <h3>Extension Method Pattern</h3>
+      <pre><code>// Infrastructure/DependencyInjection.cs
+public static class InfrastructureExtensions
+{
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration config)
+    {
+        services.AddDbContext<AppDbContext>(
+            opts => opts.UseSqlServer(
+                config.GetConnectionString("DefaultConnection")));
+
+        services.AddScoped<ITodoListRepository, TodoListRepository>();
+
+        return services;
+    }
+}
+
+// Application/DependencyInjection.cs
+public static class ApplicationExtensions
+{
+    public static IServiceCollection AddApplication(
+        this IServiceCollection services)
+    {
+        services.AddScoped<CreateTodoUseCase>();
+        services.AddScoped<CompleteTodoUseCase>();
+        services.AddScoped<GetTodosUseCase>();
+
+        return services;
+    }
+}
+
+// Program.cs (clean)
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services
+    .AddInfrastructure(builder.Configuration)
+    .AddApplication();
+
+builder.Services.AddControllers();
+
+var app = builder.Build();
+app.MapControllers();
+app.Run();</code></pre>
+    </section>
+
+    <!-- MODULE 8 -->
+    <section class="card">
+      <h2>8. Best Practices</h2>
+
+      <h3>✅ Keep Domain Pure</h3>
+      <pre><code>// Good: no external dependencies
+public class Email
+{
+    public string Value { get; }
+    
+    public Email(string value)
+    {
+        if (!value.Contains("@"))
+            throw new DomainException("Invalid email");
+        Value = value;
+    }
+}
+
+// Bad: depends on external service
+public class EmailWithValidation
+{
+    public string Value { get; }
+    
+    public EmailWithValidation(string value, IEmailValidator validator)
+    {
+        // Creates dependency on infrastructure
+    }
+}</code></pre>
+
+      <h3>✅ Avoid Anemic Models</h3>
+      <pre><code>// Bad: data container with no logic
+public class Todo
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public bool IsCompleted { get; set; }
+}
+
+// Good: encapsulates behavior
+public class Todo
+{
+    public TodoId Id { get; private set; }
+    public string Title { get; private set; }
+    public TodoStatus Status { get; private set; }
+
+    public void Complete()
+    {
+        if (Status == TodoStatus.Completed)
+            throw new DomainException("Already completed");
+        Status = TodoStatus.Completed;
+    }
+}</code></pre>
+
+      <h3>✅ Use Value Objects</h3>
+      <pre><code>// Good: strongly typed
+public void UpdateEmail(Email newEmail) { }
+
+// Bad: primitive obsession
+public void UpdateEmail(string newEmail) { }</code></pre>
+
+      <h3>✅ Respect Aggregate Boundaries</h3>
+      <pre><code>// Good: access through root only
+var todoList = await repository.GetByIdAsync(id);
+todoList.AddTodo("New task");  // Through aggregate root
+
+// Bad: direct access
+var todos = await dbContext.Todos
+    .Where(t => t.ListId == id)
+    .ToListAsync();</code></pre>
+    </section>
+
+    <!-- MODULE 9 -->
+    <section class="card">
+      <h2>9. Common Mistakes</h2>
+
+      <h3>❌ Putting EF Core in Domain</h3>
+      <div class="warning">
+        <pre><code>// WRONG: Domain depends on infrastructure
+public class Todo
+{
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+    
+    [Required]
+    [MaxLength(100)]
+    public string Title { get; set; }
+}</code></pre>
+        <pre><code>// RIGHT: Domain is pure
+public class Todo
+{
+    public TodoId Id { get; private set; }
+    public string Title { get; private set; }
+}</code></pre>
+      </div>
+
+      <h3>❌ Using DTOs in Domain</h3>
+      <div class="warning">
+        <pre><code>// WRONG
+public class Order
+{
+    public OrderDto ToDto() { }
+}</code></pre>
+        <pre><code>// RIGHT: DTO conversion in application/infrastructure
+public class OrderMappings
+{
+    public static OrderDto ToDto(Order order) { }
+}</code></pre>
+      </div>
+
+      <h3>❌ Fat Controllers</h3>
+      <div class="warning">
+        <pre><code>// WRONG: business logic in controller
+[HttpPost]
+public async Task<IActionResult> Create(CreateOrderRequest req)
+{
+    if (req.Amount < 0)  // Business rule
+        return BadRequest("Amount must be positive");
+    
+    var order = new Order(req.CustomerId, req.Amount);
+    await _db.SaveChangesAsync();
+    return Ok();
+}</code></pre>
+        <pre><code>// RIGHT: use cases handle logic
+[HttpPost]
+public async Task<IActionResult> Create(CreateOrderRequest req)
+{
+    var result = await _createOrderUseCase.ExecuteAsync(req);
+    return Ok(result);
+}</code></pre>
+      </div>
+
+      <h3>❌ Treating DDD as Just Folders</h3>
+      <div class="warning">
+        <p>DDD is NOT about creating Domain/Application/Infrastructure folders. It's about encapsulating business logic, protecting aggregates, and using value objects. Folder structure only reflects understanding.</p>
+      </div>
+
+      <h3>❌ Ignoring Bounded Contexts</h3>
+      <div class="warning">
+        <p>Creating one giant domain model instead of separate bounded contexts for different business areas. Example: Order context should be separate from Shipping context.</p>
+      </div>
+    </section>
+
+    <footer class="card" style="border-left:5px solid var(--brand);padding-left:16px;">
+      <h2>Summary</h2>
+      <p>Domain-Driven Design places business logic at the heart of your application. By using entities, value objects, aggregates, and repositories, you create code that's testable, maintainable, and reflects your business reality. Start with clear domain boundaries, protect your aggregates, and keep infrastructure concerns separate. The initial investment in DDD pays off as your application grows.</p>
+    </footer>
+  </main>
+</body>
+</html>
+          <td style="border:1px solid var(--line);padding:12px;">Independence</td>
+          <td style="border:1px solid var(--line);padding:12px;">Business domain</td>
+        </tr>
+        <tr style="background:#f8fafc;">
+          <td style="border:1px solid var(--line);padding:12px;">Domain Logic</td>
+          <td style="border:1px solid var(--line);padding:12px;">Scattered</td>
+          <td style="border:1px solid var(--line);padding:12px;">Core</td>
+          <td style="border:1px solid var(--line);padding:12px;">Central & Pure</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid var(--line);padding:12px;">Testability</td>
+          <td style="border:1px solid var(--line);padding:12px;">Medium</td>
+          <td style="border:1px solid var(--line);padding:12px;">High</td>
+          <td style="border:1px solid var(--line);padding:12px;">Very High</td>
+        </tr>
+        <tr style="background:#f8fafc;">
+          <td style="border:1px solid var(--line);padding:12px;">Scalability</td>
+          <td style="border:1px solid var(--line);padding:12px;">Low</td>
+          <td style="border:1px solid var(--line);padding:12px;">High</td>
+          <td style="border:1px solid var(--line);padding:12px;">Very High</td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- MODULE 4 -->
+    <section class="card">
+      <h2>4. .NET 8 Project Structure</h2>
+
+      <h3>Solution Overview (TodoApp)</h3>
+      <div class="diagram">TodoApp (Solution)
+├── TodoApp.Domain (Class Library)
+├── TodoApp.Application (Class Library)
+├── TodoApp.Infrastructure (Class Library)
+├── TodoApp.Web (ASP.NET Core)
+└── TodoApp.Tests (xUnit)
