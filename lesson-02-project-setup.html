@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 2 - Project Setup (.NET 8)</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#ffffff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.06);padding:28px;margin-bottom:24px}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}code{font-family:Consolas,monospace}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Setup</span>
+      <h1>Lesson 2: Project Setup (.NET 8)</h1>
+      <p>This lesson creates the MVC project, explains the default structure, and shows how the .NET 8 hosting model wires the application together with one <code>Program.cs</code> file.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>A clean starting point makes later lessons easier. We will use the official MVC template, keep the project small, and route the default page to our Todo controller.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Create the project with the .NET 8 SDK.</li>
+        <li>Understand standard MVC folders: <code>Controllers</code>, <code>Models</code>, <code>Views</code>, and <code>wwwroot</code>.</li>
+        <li>Use <code>Program.cs</code> for service registration and middleware.</li>
+        <li>Run the app with <code>dotnet run</code> and verify routing.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Create the Project</h3>
+        <pre><code>dotnet new mvc -n TodoMvcApp --framework net8.0
+cd TodoMvcApp
+dotnet run</code></pre>
+      </article>
+      <article>
+        <h3>Typical Folder Structure</h3>
+        <pre><code>TodoMvcApp
+|-- Controllers
+|-- Models
+|-- Views
+|   |-- Shared
+|-- wwwroot
+|-- appsettings.json
+|-- Program.cs
+|-- TodoMvcApp.csproj</code></pre>
+      </article>
+      <article>
+        <h3>Suggested Industry-Standard Folder Structure</h3>
+        <pre><code>TodoMvcApp
+|-- Controllers
+|   |-- TodoController.cs
+|-- Models
+|   |-- TodoItem.cs
+|   |-- TodoStatus.cs
+|-- Interfaces
+|   |-- ITodoRepository.cs
+|   |-- ITodoService.cs
+|   |-- IUnitOfWork.cs
+|-- Views
+|   |-- Todo
+|   |   |-- Index.cshtml
+|   |   |-- Create.cshtml
+|   |-- Shared
+|   |   |-- _Layout.cshtml
+|   |   |-- _ValidationScriptsPartial.cshtml
+|-- Data
+|   |-- TodoDbContext.cs
+|   |-- EfTodoRepository.cs
+|-- Services
+|   |-- TodoService.cs
+|-- Extensions
+|   |-- TodoStatusExtensions.cs
+|-- Middleware
+|   |-- GlobalExceptionMiddleware.cs
+|-- Filters
+|   |-- ValidateTodoExistsAttribute.cs
+|   |-- AuditActionFilter.cs
+|-- Handlers
+|   |-- TodoStatusQueryHandler.cs
+|   |-- TodoSummaryHandler.cs
+|-- Helpers
+|   |-- DateTimeHelper.cs
+|   |-- PaginationHelper.cs
+|-- wwwroot
+|   |-- css
+|   |-- js
+|   |-- lib
+|-- appsettings.json
+|-- appsettings.Development.json
+|-- Program.cs
+|-- TodoMvcApp.csproj</code></pre>
+        <p>This structure keeps MVC concerns clear while giving you dedicated places for data access, business logic, extensions, middleware, and static assets. Small tutorial apps can start with fewer folders, but this layout scales better as the application grows.</p>
+      </article>
+      <article>
+        <h3>Why Teams Prefer This Structure</h3>
+        <ul>
+          <li><code>Controllers</code> stay focused on HTTP requests and responses.</li>
+          <li><code>Models</code> hold domain data, enums, and validation rules.</li>
+          <li><code>Interfaces</code> keeps contracts separate from implementations, which helps with testing and dependency injection.</li>
+          <li><code>Data</code> contains repositories, <code>DbContext</code>, and persistence concerns.</li>
+          <li><code>Services</code> handle business rules that should not live in controllers.</li>
+          <li><code>Extensions</code> keeps reusable helper methods easy to find.</li>
+          <li><code>Middleware</code> contains cross-cutting request pipeline behavior.</li>
+          <li><code>Filters</code> is a good place for action filters and reusable MVC request rules.</li>
+          <li><code>Handlers</code> can hold focused processing logic when features grow beyond simple service methods.</li>
+          <li><code>Helpers</code> works well for shared utility logic that does not belong to a service or model.</li>
+          <li><code>Views</code> remains organized by feature, which is easier to navigate in larger MVC projects.</li>
+        </ul>
+      </article>
+      <article>
+        <h3>Explain Program.cs</h3>
+        <pre><code>var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();
+
+var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Todo}/{action=Index}/{id?}");
+
+app.Run();</code></pre>
+        <p><code>builder.Services</code> is where we register framework and application services. <code>app</code> defines middleware and routes. This single file replaces the older split between <code>Program.cs</code> and <code>Startup.cs</code>.</p>
+      </article>
+      <article>
+        <h3>Nullable Context in Modern .NET Projects</h3>
+        <pre><code>&lt;Project Sdk="Microsoft.NET.Sdk.Web"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net8.0&lt;/TargetFramework&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+  &lt;/PropertyGroup&gt;
+&lt;/Project&gt;</code></pre>
+        <p>.NET 8 projects commonly enable nullable reference types in the project file. This helps the compiler warn you when code may pass or return null in unsafe ways. It is one of the most important quality-of-life features in modern C#.</p>
+      </article>
+      <article>
+        <h3>Null Coalescing and Null-Forgiving Operator</h3>
+        <pre><code>string? connectionString = builder.Configuration.GetConnectionString("TodoDb");
+
+string safeConnectionString = connectionString ?? "FallbackConnection";
+
+string requiredConnectionString = builder.Configuration
+    .GetConnectionString("TodoDb")
+    ?? throw new InvalidOperationException("Missing TodoDb connection string.");
+
+string trustedValue = connectionString!;</code></pre>
+        <p>The null-coalescing operator <code>??</code> gives you a fallback when a value is null. The null-forgiving operator <code>!</code> tells the compiler to stop warning about possible null, but it should only be used when you are truly certain the value exists. In most cases, a fallback or explicit exception is safer than force unwrapping.</p>
+      </article>
+      <article>
+        <h3>Create the Controller Shell</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc;
+
+namespace TodoMvcApp.Controllers;
+
+public sealed class TodoController : Controller
+{
+    public IActionResult Index()
+    {
+        return View();
+    }
+}</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>The project is now created with the .NET 8 MVC template, and the entire startup flow lives in <code>Program.cs</code>. We are ready to add our first real domain model for Todo items.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 2.1 explains <code>ActionResult</code>, <code>IActionResult</code>, and the difference between <code>ControllerBase</code> and <code>Controller</code>.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-01-02-enum-and-extensions.html">Back</a>
+        <a class="nav-button" href="lesson-02-01-actionresult-controller-types.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

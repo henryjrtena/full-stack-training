@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 1.1 - .NET Basic Coding Syntax and Modern .NET 8 Syntax</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#ffffff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--accent:#d97706;--line:#d8e1ea;--code:#0b1120;}
+    *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.06);padding:28px;margin-bottom:24px}
+    h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}code{font-family:Consolas,monospace}.next{border-left:5px solid var(--brand);padding-left:16px}
+    .nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}
+    .eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem;letter-spacing:.02em}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">ASP.NET Core MVC Todo Application (.NET 8)</span>
+      <h1>Lesson 1.1: .NET Basic Coding Syntax and Modern .NET 8 Syntax</h1>
+      <p>Before we build the Todo application, it helps to get comfortable with everyday C# syntax and the modern coding style you will see throughout a .NET 8 project. This lesson bridges classic C# basics with the cleaner syntax patterns used in current ASP.NET Core applications.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>C# has grown over many versions, and .NET 8 projects often use newer, more compact syntax. You still need the basics like variables, conditionals, loops, classes, and methods, but you also need to recognize features like top-level style hosting, collection expressions, primary constructors, file-scoped namespaces, and async-first coding patterns.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Basic C# syntax includes variables, methods, conditionals, loops, and classes.</li>
+        <li>Modern .NET code prefers concise syntax when it improves readability.</li>
+        <li>File-scoped namespaces reduce indentation noise.</li>
+        <li><code>async</code> and <code>await</code> are standard for I/O and web development.</li>
+        <li>.NET 8 applications use the minimal hosting model in <code>Program.cs</code>.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Basic Variables and Control Flow</h3>
+        <pre><code>string title = "Buy groceries";
+int priority = 2;
+bool isCompleted = false;
+
+if (!isCompleted && priority &gt; 1)
+{
+    Console.WriteLine("This todo needs attention.");
+}
+else
+{
+    Console.WriteLine("This todo can wait.");
+}</code></pre>
+        <p>This is standard C# syntax you will see everywhere. Variables are strongly typed, conditions use boolean expressions, and code blocks use braces.</p>
+      </article>
+      <article>
+        <h3>Methods and Classes</h3>
+        <pre><code>public sealed class TodoItem
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public bool IsCompleted { get; set; }
+
+    public string GetStatus()
+    {
+        return IsCompleted ? "Done" : "Open";
+    }
+}</code></pre>
+        <p>Classes group related data and behavior. Properties store values, and methods provide logic that works with those values.</p>
+      </article>
+      <article>
+        <h3>Modern File-Scoped Namespace Syntax</h3>
+        <pre><code>namespace TodoMvcApp.Models;
+
+public sealed class TodoItem
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+}</code></pre>
+        <p>Older C# code wrapped the entire file inside braces after the namespace declaration. File-scoped namespaces are cleaner and are common in modern .NET projects.</p>
+      </article>
+      <article>
+        <h3>Object Initializers and Target-Typed <code>new</code></h3>
+        <pre><code>TodoItem item = new()
+{
+    Id = 1,
+    Title = "Study ASP.NET Core MVC",
+    IsCompleted = false
+};</code></pre>
+        <p>When the type is already known on the left side, <code>new()</code> avoids repeating the type name.</p>
+      </article>
+      <article>
+        <h3>Collection Expressions in Modern C#</h3>
+        <pre><code>List&lt;TodoItem&gt; items =
+[
+    new() { Id = 1, Title = "Learn routing" },
+    new() { Id = 2, Title = "Build create form" }
+];</code></pre>
+        <p>This compact collection expression syntax is a modern addition and fits nicely in .NET 8-era codebases.</p>
+      </article>
+      <article>
+        <h3>Expression-Bodied Members</h3>
+        <pre><code>public string GetSummary() =&gt; $"{Id}: {Title}";</code></pre>
+        <p>Short one-line members are often written with expression-bodied syntax to reduce boilerplate.</p>
+      </article>
+      <article>
+        <h3>Primary Constructor Style</h3>
+        <pre><code>public sealed class TodoService(ILogger&lt;TodoService&gt; logger)
+{
+    public void LogCreate(TodoItem item)
+    {
+        logger.LogInformation("Created todo {Title}", item.Title);
+    }
+}</code></pre>
+        <p>Primary constructors are a newer C# feature that work well for dependency injection and simple service classes.</p>
+      </article>
+      <article>
+        <h3>Async and Await</h3>
+        <pre><code>public async Task SaveAsync(TodoItem item, CancellationToken cancellationToken)
+{
+    await Task.Delay(100, cancellationToken);
+    Console.WriteLine($"Saved {item.Title}");
+}</code></pre>
+        <p>In web apps, async methods are preferred for database calls, API calls, file access, and anything else that waits on I/O.</p>
+      </article>
+      <article>
+        <h3>Modern .NET 8 Program.cs Syntax</h3>
+        <pre><code>var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Todo}/{action=Index}/{id?}");
+
+app.Run();</code></pre>
+        <p>This is the standard .NET 8 application startup style. It replaces the older <code>Startup.cs</code> approach and is the pattern used throughout this course.</p>
+      </article>
+      <article>
+        <h3>Older Style vs Newer Style</h3>
+        <pre><code>// Older style
+namespace TodoMvcApp.Models
+{
+    public class TodoItem
+    {
+        public string Title { get; set; }
+    }
+}
+
+// Newer style
+namespace TodoMvcApp.Models;
+
+public sealed class TodoItem
+{
+    public string Title { get; set; } = string.Empty;
+}</code></pre>
+        <p>The newer style is not just shorter. It also reflects current conventions around null safety, immutability where appropriate, and more readable project files.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>You now have a foundation in both traditional C# syntax and the modern coding style used in .NET 8 applications. That means the code in the rest of this MVC Todo course should feel much more approachable.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 1.2 explains enums, why they are better than magic strings or magic ints, and how extension methods make them even more useful.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-01-introduction.html">Back</a>
+        <a class="nav-button" href="lesson-01-02-enum-and-extensions.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

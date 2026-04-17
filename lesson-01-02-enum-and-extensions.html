@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 1.2 - Enums, Magic Strings, Magic Ints, and Extensions</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#ffffff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--accent:#d97706;--line:#d8e1ea;--code:#0b1120;}
+    *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.06);padding:28px;margin-bottom:24px}
+    h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}code{font-family:Consolas,monospace}.next{border-left:5px solid var(--brand);padding-left:16px}
+    .nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}
+    .eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem;letter-spacing:.02em}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">ASP.NET Core MVC Todo Application (.NET 8)</span>
+      <h1>Lesson 1.2: Enum, Magic Strings, Magic Ints, and Extensions</h1>
+      <p>Enums are a small language feature with a big impact on clarity. This lesson explains why enums are important, how they improve code compared to magic strings and magic integers, and how extension methods can make enums easier to display and reuse throughout an application.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>As your code grows, values like <code>"Open"</code>, <code>"Done"</code>, <code>1</code>, or <code>2</code> start to become dangerous when their meaning only exists in someone's memory. Enums solve that by giving a clear, named set of allowed values. This becomes especially useful in MVC applications, where status values often appear in models, controllers, views, filtering logic, and database mapping.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>An enum defines a limited set of named values.</li>
+        <li>Magic strings are raw text values whose meaning is easy to mistype.</li>
+        <li>Magic ints are raw numeric values whose meaning is hard to remember.</li>
+        <li>Enums improve readability, refactoring safety, and intent.</li>
+        <li>Enums are backed by numeric values, which matters when parsing, storing, or serializing data.</li>
+        <li>Extension methods let you add reusable behavior to enum values without changing the enum itself.</li>
+        <li>Extension methods are a general C# feature and are not limited to enums.</li>
+        <li>Modern .NET projects use nullable reference types to make null handling more explicit.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>What Is a Magic String?</h3>
+        <pre><code>public string Status { get; set; } = "Open";
+
+if (todo.Status == "Done")
+{
+    Console.WriteLine("Task completed.");
+}</code></pre>
+        <p>This works, but it is fragile. A typo like <code>"done"</code>, <code>"DONE"</code>, or <code>"Dnoe"</code> can silently break behavior.</p>
+      </article>
+      <article>
+        <h3>What Is a Magic Int?</h3>
+        <pre><code>public int Status { get; set; } = 1;
+
+if (todo.Status == 2)
+{
+    Console.WriteLine("Task completed.");
+}</code></pre>
+        <p>This is even harder to understand because the number does not explain itself. Someone reading the code has to remember that <code>1</code> means open and <code>2</code> means done.</p>
+      </article>
+      <article>
+        <h3>Use an Enum Instead</h3>
+        <pre><code>namespace TodoMvcApp.Models;
+
+public enum TodoStatus
+{
+    Open = 1,
+    InProgress = 2,
+    Done = 3,
+    Archived = 4
+}</code></pre>
+        <p>Now the possible values are named, limited, and self-documenting. This makes your code easier to read and harder to misuse.</p>
+      </article>
+      <article>
+        <h3>Enums Are Backed by Integers</h3>
+        <pre><code>int rawValue = (int)TodoStatus.Done;   // 3
+TodoStatus status = (TodoStatus)2;     // InProgress</code></pre>
+        <p>Each enum member has an underlying numeric value. That means enums can still map cleanly to database columns, payload values, and legacy systems while staying readable in code.</p>
+      </article>
+      <article>
+        <h3>Use the Enum in a Model</h3>
+        <pre><code>namespace TodoMvcApp.Models;
+
+public sealed class TodoItem
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public TodoStatus Status { get; set; } = TodoStatus.Open;
+}</code></pre>
+        <p>Instead of storing unclear values, the model clearly states that <code>Status</code> must be one of the defined <code>TodoStatus</code> values.</p>
+      </article>
+      <article>
+        <h3>Controller Logic Becomes Clearer</h3>
+        <pre><code>if (item.Status == TodoStatus.Done)
+{
+    TempData["Message"] = "This todo is already complete.";
+}</code></pre>
+        <p>This reads almost like plain English. That is the main benefit of enums: intent is visible directly in the code.</p>
+      </article>
+      <article>
+        <h3>Enum vs Magic String Comparison</h3>
+        <pre><code>// Magic string
+if (item.StatusText == "InProgress")
+{
+    // do work
+}
+
+// Enum
+if (item.Status == TodoStatus.InProgress)
+{
+    // do work
+}</code></pre>
+        <p>With the enum version, your editor can autocomplete values, refactoring tools can update usages safely, and the compiler can catch more mistakes.</p>
+      </article>
+      <article>
+        <h3>Enum vs Magic Int Comparison</h3>
+        <pre><code>// Magic int
+if (item.StatusId == 3)
+{
+    // do work
+}
+
+// Enum
+if (item.Status == TodoStatus.Done)
+{
+    // do work
+}</code></pre>
+        <p>The enum version is much easier to maintain because the meaning is attached directly to the value name.</p>
+      </article>
+      <article>
+        <h3>Add an Extension Method</h3>
+        <pre><code>namespace TodoMvcApp.Extensions;
+
+using TodoMvcApp.Models;
+
+public static class TodoStatusExtensions
+{
+    public static string ToDisplayText(this TodoStatus status) =&gt; status switch
+    {
+        TodoStatus.Open =&gt; "Open",
+        TodoStatus.InProgress =&gt; "In Progress",
+        TodoStatus.Done =&gt; "Done",
+        TodoStatus.Archived =&gt; "Archived",
+        _ =&gt; "Unknown"
+    };
+}</code></pre>
+        <p>An extension method adds behavior to the enum without changing the enum declaration itself. This is a clean way to centralize UI-friendly labels.</p>
+      </article>
+      <article>
+        <h3>Extensions Are Not Limited to Enums</h3>
+        <pre><code>namespace TodoMvcApp.Extensions;
+
+public static class StringExtensions
+{
+    public static string ToSlug(this string value)
+    {
+        return value.Trim().ToLowerInvariant().Replace(' ', '-');
+    }
+}</code></pre>
+        <p>Extension methods can be used with strings, collections, dates, your own classes, and many other types. The enum example is useful here, but extension methods are a broader C# feature for adding reusable helper behavior.</p>
+      </article>
+      <article>
+        <h3>Collection Extension Example</h3>
+        <pre><code>namespace TodoMvcApp.Extensions;
+
+using TodoMvcApp.Models;
+
+public static class TodoCollectionExtensions
+{
+    public static int CountOpenItems(this IEnumerable&lt;TodoItem&gt; items)
+    {
+        return items.Count(x =&gt; x.Status == TodoStatus.Open);
+    }
+}</code></pre>
+        <p>This kind of extension method helps move repeated logic out of controllers and views into a central, reusable place.</p>
+      </article>
+      <article>
+        <h3>Nullable Context, Null Coalescing, and Force Unwrapping</h3>
+        <pre><code>namespace TodoMvcApp.Models;
+
+public sealed class TodoItem
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+}
+
+string displayText = item.Description ?? "No description provided";
+string forced = item.Description!;</code></pre>
+        <p>In modern C#, a property like <code>string?</code> means the value can be null, while <code>string</code> means it should not be null. The null-coalescing operator <code>??</code> gives you a fallback value when something is null. The null-forgiving operator <code>!</code>, sometimes called force unwrapping, tells the compiler “I know this is not null here,” but it should be used carefully because it does not prevent a real null value at runtime.</p>
+      </article>
+      <article>
+        <h3>Practical Nullable Example with Enums</h3>
+        <pre><code>TodoStatus? status = null;
+
+string label = status?.ToString() ?? "Unknown";
+
+TodoStatus confirmedStatus = status ?? TodoStatus.Open;</code></pre>
+        <p>This pattern is common when values may be missing from forms, APIs, or optional configuration. Using nullable types together with <code>??</code> makes your code safer and easier to understand.</p>
+      </article>
+      <article>
+        <h3>Use the Extension Method</h3>
+        <pre><code>using TodoMvcApp.Extensions;
+
+var label = item.Status.ToDisplayText();
+Console.WriteLine(label);</code></pre>
+        <p>This keeps formatting logic out of controllers and views and makes the enum easier to work with across the application.</p>
+      </article>
+      <article>
+        <h3>Useful MVC View Example</h3>
+        <pre><code>@using TodoMvcApp.Extensions
+@model TodoMvcApp.Models.TodoItem
+
+&lt;span class="badge"&gt;@Model.Status.ToDisplayText()&lt;/span&gt;</code></pre>
+        <p>This is a practical pattern for Razor views. The model keeps the enum value, while the extension method provides presentation-friendly output.</p>
+      </article>
+      <article>
+        <h3>Enum Parsing Example</h3>
+        <pre><code>if (Enum.TryParse&lt;TodoStatus&gt;(input, ignoreCase: true, out var status))
+{
+    Console.WriteLine($"Parsed status: {status}");
+}</code></pre>
+        <p>This is useful when reading values from query strings, forms, or configuration, but you should still validate that the parsed value is one your application actually expects.</p>
+      </article>
+      <article>
+        <h3>Parsing from Integers</h3>
+        <pre><code>int statusId = 3;
+
+if (Enum.IsDefined(typeof(TodoStatus), statusId))
+{
+    var status = (TodoStatus)statusId;
+    Console.WriteLine(status); // Done
+}</code></pre>
+        <p>This is useful when an API, database, or legacy system stores enum values as integers. Casting is easy, but you should validate incoming numeric values so invalid numbers do not slip into your application flow.</p>
+      </article>
+      <article>
+        <h3>Enum Serialization and Storage</h3>
+        <pre><code>// Save enum as int
+int dbValue = (int)item.Status;
+
+// Rebuild enum from int
+item.Status = (TodoStatus)dbValue;</code></pre>
+        <p>Enums often get serialized as integers or strings depending on your storage or API needs. In code, you still benefit from named members like <code>TodoStatus.Done</code>, while serialization gives you a transport-friendly value.</p>
+      </article>
+      <article>
+        <h3>When Enums Are a Good Fit</h3>
+        <ul>
+          <li>When the valid values are known and limited.</li>
+          <li>When the meaning should be obvious from the code.</li>
+          <li>When the same status appears in multiple layers of the app.</li>
+          <li>When you want refactoring and autocomplete support.</li>
+        </ul>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Enums help replace unclear raw values with named, meaningful choices. Compared to magic strings and magic ints, they make code safer, more readable, and easier to maintain. They also map naturally to integers for parsing, storage, and serialization. Extension methods then let you add useful behavior to enums and many other types without cluttering your models or controllers.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 2 sets up the .NET 8 MVC project, explains the folder structure, and walks through the <code>Program.cs</code> file in detail.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-01-01-dotnet-basic-syntax.html">Back</a>
+        <a class="nav-button" href="lesson-02-project-setup.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

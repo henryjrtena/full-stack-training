@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 8.1 - LINQ Hands-On in a Controller</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}
+    *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+    h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul,ol{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}
+    .next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}
+    details.answer{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#f8fafc;padding:14px 16px}details.answer summary{cursor:pointer;font-weight:700;color:var(--brand);margin-bottom:12px}
+    .eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">LINQ Bridge</span>
+      <h1>Lesson 8.1: LINQ Hands-On in a Controller</h1>
+      <p>Before moving into dependency injection, this bridge lesson introduces LINQ using the same in-memory Todo idea from Lesson 8. We will query a fake Todo list inside a controller and practice common LINQ operations with exact expected output.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>LINQ stands for Language Integrated Query. It lets you query collections in C# using readable method chains or query syntax. In ASP.NET Core MVC, LINQ is everywhere: filtering data, sorting records, selecting fields, grouping items, and shaping data before passing it to a view or API response.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li><code>Where</code> filters items.</li>
+        <li><code>Select</code> projects items into a new shape.</li>
+        <li><code>OrderBy</code> and <code>OrderByDescending</code> sort data.</li>
+        <li><code>FirstOrDefault</code>, <code>Any</code>, and <code>Count</code> help inspect collections.</li>
+        <li>LINQ is especially useful with in-memory collections, EF Core, and API responses.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Create Fake Todo Data in a Controller</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc;
+
+namespace TodoMvcApp.Controllers;
+
+public sealed class LinqDemoController : Controller
+{
+    private static readonly List&lt;TodoItem&gt; Todos =
+    [
+        new() { Id = 1, Title = "Learn MVC", IsCompleted = false, Priority = 2 },
+        new() { Id = 2, Title = "Write controller", IsCompleted = true, Priority = 3 },
+        new() { Id = 3, Title = "Build view", IsCompleted = false, Priority = 1 },
+        new() { Id = 4, Title = "Add validation", IsCompleted = true, Priority = 4 },
+        new() { Id = 5, Title = "Practice LINQ", IsCompleted = false, Priority = 5 }
+    ];
+}
+
+public sealed class TodoItem
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public bool IsCompleted { get; set; }
+    public int Priority { get; set; }
+}</code></pre>
+        <p>This fake list gives us a predictable dataset. That matters because every exercise below includes exact expected output.</p>
+      </article>
+      <article>
+        <h3>Common LINQ Functions</h3>
+        <pre><code>var openItems = Todos.Where(x =&gt; !x.IsCompleted);
+var titles = Todos.Select(x =&gt; x.Title);
+var sorted = Todos.OrderByDescending(x =&gt; x.Priority);
+var first = Todos.FirstOrDefault();
+var hasCompleted = Todos.Any(x =&gt; x.IsCompleted);
+var total = Todos.Count();</code></pre>
+        <p>These are some of the most frequently used LINQ methods in MVC applications. We will now practice them in controller actions.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Hands-On Activities</h2>
+      <article>
+        <h3>Exercise 1: Use Select to Return Titles Only</h3>
+        <details class="answer">
+          <summary>Show Sample Solution</summary>
+          <pre><code>public IActionResult Exercise1()
+{
+    var result = Todos
+        .Select(x =&gt; x.Title)
+        .ToList();
+
+    return Json(result);
+}</code></pre>
+        </details>
+        <p>Exact Output:</p>
+        <pre><code>[
+  "Learn MVC",
+  "Write controller",
+  "Build view",
+  "Add validation",
+  "Practice LINQ"
+]</code></pre>
+      </article>
+      <article>
+        <h3>Exercise 2: Use Where to Return Open Todo Items</h3>
+        <details class="answer">
+          <summary>Show Sample Solution</summary>
+          <pre><code>public IActionResult Exercise2()
+{
+    var result = Todos
+        .Where(x =&gt; !x.IsCompleted)
+        .Select(x =&gt; x.Title)
+        .ToList();
+
+    return Json(result);
+}</code></pre>
+        </details>
+        <p>Exact Output:</p>
+        <pre><code>[
+  "Learn MVC",
+  "Build view",
+  "Practice LINQ"
+]</code></pre>
+      </article>
+      <article>
+        <h3>Exercise 3: Use OrderByDescending for Priority</h3>
+        <details class="answer">
+          <summary>Show Sample Solution</summary>
+          <pre><code>public IActionResult Exercise3()
+{
+    var result = Todos
+        .OrderByDescending(x =&gt; x.Priority)
+        .Select(x =&gt; new { x.Title, x.Priority })
+        .ToList();
+
+    return Json(result);
+}</code></pre>
+        </details>
+        <p>Exact Output:</p>
+        <pre><code>[
+  { "title": "Practice LINQ", "priority": 5 },
+  { "title": "Add validation", "priority": 4 },
+  { "title": "Write controller", "priority": 3 },
+  { "title": "Learn MVC", "priority": 2 },
+  { "title": "Build view", "priority": 1 }
+]</code></pre>
+      </article>
+      <article>
+        <h3>Exercise 4: Combine Where and OrderByDescending</h3>
+        <details class="answer">
+          <summary>Show Sample Solution</summary>
+          <pre><code>public IActionResult Exercise4()
+{
+    var result = Todos
+        .Where(x =&gt; !x.IsCompleted)
+        .OrderByDescending(x =&gt; x.Priority)
+        .Select(x =&gt; new { x.Title, x.Priority })
+        .ToList();
+
+    return Json(result);
+}</code></pre>
+        </details>
+        <p>Exact Output:</p>
+        <pre><code>[
+  { "title": "Practice LINQ", "priority": 5 },
+  { "title": "Learn MVC", "priority": 2 },
+  { "title": "Build view", "priority": 1 }
+]</code></pre>
+      </article>
+      <article>
+        <h3>Exercise 5: Use Select to Shape Custom Output</h3>
+        <details class="answer">
+          <summary>Show Sample Solution</summary>
+          <pre><code>public IActionResult Exercise5()
+{
+    var result = Todos
+        .Select(x =&gt; new
+        {
+            x.Id,
+            Summary = $"{x.Title} - Priority {x.Priority}"
+        })
+        .ToList();
+
+    return Json(result);
+}</code></pre>
+        </details>
+        <p>Exact Output:</p>
+        <pre><code>[
+  { "id": 1, "summary": "Learn MVC - Priority 2" },
+  { "id": 2, "summary": "Write controller - Priority 3" },
+  { "id": 3, "summary": "Build view - Priority 1" },
+  { "id": 4, "summary": "Add validation - Priority 4" },
+  { "id": 5, "summary": "Practice LINQ - Priority 5" }
+]</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Extra LINQ Functions Worth Knowing</h2>
+      <article>
+        <h3>Count, Any, and FirstOrDefault</h3>
+        <pre><code>public IActionResult ExtraExamples()
+{
+    var total = Todos.Count();
+    var hasCompleted = Todos.Any(x =&gt; x.IsCompleted);
+    var firstHighPriority = Todos.FirstOrDefault(x =&gt; x.Priority &gt;= 4);
+
+    return Json(new
+    {
+        Total = total,
+        HasCompleted = hasCompleted,
+        FirstHighPriority = firstHighPriority?.Title
+    });
+}</code></pre>
+        <p>Exact Output:</p>
+        <pre><code>{
+  "total": 5,
+  "hasCompleted": true,
+  "firstHighPriority": "Add validation"
+}</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Practice Activity</h2>
+      <p>Create a controller named <code>LinqPracticeController</code> and copy the same fake Todo list. Then try the following exercises on your own before checking the expected output.</p>
+      <ol>
+        <li>Select only the <code>Id</code> values.</li>
+        <li>Filter only completed todo items.</li>
+        <li>Sort all todo items by <code>Title</code> in ascending order.</li>
+        <li>Filter items with <code>Priority &gt;= 3</code>.</li>
+        <li>Select a new object with only <code>Title</code> and <code>IsCompleted</code>.</li>
+      </ol>
+      <p>For classroom practice, ask students to predict the output before running the action. LINQ becomes much easier once they can read a query and mentally picture the resulting collection.</p>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>LINQ gives you a powerful, readable way to query collections inside controllers. In this bridge lesson, you practiced <code>Select</code>, <code>Where</code>, and <code>OrderByDescending</code> using exact outputs on a fake Todo list. That foundation will help a lot once the course moves from static data into injected services and repositories.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 9 introduces dependency injection in .NET 8 style and shows how controllers receive services through constructor injection.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-08-static-in-memory.html">Back</a>
+        <a class="nav-button" href="lesson-09-dependency-injection.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

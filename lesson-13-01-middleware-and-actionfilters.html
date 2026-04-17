@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 13.2 - Middleware and Action Filters</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}
+    *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+    h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}
+    .next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}
+    .eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Pipeline and MVC Hooks</span>
+      <h1>Lesson 13.2: Middleware and Action Filters</h1>
+      <p>This bridge lesson explains two important extension points in ASP.NET Core: middleware in the HTTP pipeline and action filters in the MVC pipeline. Both help you apply cross-cutting behavior, but they operate at different levels.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>As applications grow, some logic needs to happen for many requests, not just one controller action. Logging, exception handling, timing, authentication checks, and request enrichment are common examples. ASP.NET Core gives you middleware and action filters to handle those concerns cleanly.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Middleware runs in the ASP.NET Core HTTP request pipeline.</li>
+        <li>Action filters run around MVC controller actions.</li>
+        <li>Middleware is broader and can affect all incoming requests.</li>
+        <li>Action filters are more MVC-specific and work well for controller-focused behavior.</li>
+        <li>Choosing the right one depends on where the concern belongs.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>What Middleware Does</h3>
+        <pre><code>Request
+  -&gt; Middleware 1
+  -&gt; Middleware 2
+  -&gt; Middleware 3
+  -&gt; MVC Routing
+  -&gt; Controller Action
+  -&gt; Response</code></pre>
+        <p>Middleware sits in the request pipeline before MVC gets control. It can inspect the request, short-circuit the pipeline, call the next middleware, and inspect or modify the response on the way back out.</p>
+      </article>
+      <article>
+        <h3>Create Custom Middleware</h3>
+        <pre><code>public sealed class RequestTimingMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger&lt;RequestTimingMiddleware&gt; _logger;
+
+    public RequestTimingMiddleware(
+        RequestDelegate next,
+        ILogger&lt;RequestTimingMiddleware&gt; logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var startedAt = DateTime.UtcNow;
+
+        await _next(context);
+
+        var duration = DateTime.UtcNow - startedAt;
+        _logger.LogInformation(
+            "Request {Path} completed in {DurationMs} ms",
+            context.Request.Path,
+            duration.TotalMilliseconds);
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Register Middleware in Program.cs</h3>
+        <pre><code>var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();
+
+var app = builder.Build();
+
+app.UseMiddleware&lt;RequestTimingMiddleware&gt;();
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Todo}/{action=Index}/{id?}");
+
+app.Run();</code></pre>
+        <p>This is one of the clearest signs that middleware belongs to the application pipeline, not just to MVC.</p>
+      </article>
+      <article>
+        <h3>What an Action Filter Does</h3>
+        <pre><code>Request
+  -&gt; Middleware
+  -&gt; MVC
+  -&gt; Action Filter
+  -&gt; Controller Action
+  -&gt; Action Filter
+  -&gt; Response</code></pre>
+        <p>Action filters run closer to the controller action itself. They are ideal when the behavior only makes sense for MVC actions, such as validating route data, logging action execution, or applying action-specific rules.</p>
+      </article>
+      <article>
+        <h3>Create an Action Filter</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc.Filters;
+
+public sealed class AuditActionFilter : IActionFilter
+{
+    private readonly ILogger&lt;AuditActionFilter&gt; _logger;
+
+    public AuditActionFilter(ILogger&lt;AuditActionFilter&gt; logger)
+    {
+        _logger = logger;
+    }
+
+    public void OnActionExecuting(ActionExecutingContext context)
+    {
+        _logger.LogInformation(
+            "Executing action {ActionName}",
+            context.ActionDescriptor.DisplayName);
+    }
+
+    public void OnActionExecuted(ActionExecutedContext context)
+    {
+        _logger.LogInformation(
+            "Executed action {ActionName}",
+            context.ActionDescriptor.DisplayName);
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Register and Use the Filter</h3>
+        <pre><code>builder.Services.AddScoped&lt;AuditActionFilter&gt;();
+
+builder.Services.AddControllersWithViews(options =&gt;
+{
+    options.Filters.AddService&lt;AuditActionFilter&gt;();
+});</code></pre>
+        <p>You can also apply filters to a specific controller or action instead of globally.</p>
+      </article>
+      <article>
+        <h3>Per-Action Filter Example</h3>
+        <pre><code>[ServiceFilter(typeof(AuditActionFilter))]
+public sealed class TodoController : Controller
+{
+    public IActionResult Index()
+    {
+        return View();
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Middleware vs Action Filter</h3>
+        <pre><code>// Use middleware for:
+// - global exception handling
+// - request logging
+// - authentication pipeline work
+// - response headers
+
+// Use action filters for:
+// - action-specific logging
+// - MVC validation behavior
+// - checking route or action arguments
+// - controller-level cross-cutting rules</code></pre>
+        <p>A good rule of thumb is this: if the concern belongs to every HTTP request, consider middleware first. If it belongs specifically to MVC action execution, consider an action filter.</p>
+      </article>
+      <article>
+        <h3>Example for the Todo App</h3>
+        <p>In this Todo application, middleware is a great place for global exception handling and request timing. Action filters are a good fit for auditing controller actions or checking whether a Todo item exists before allowing an edit or delete action to continue.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Middleware and action filters both help you keep controller code cleaner, but they solve different kinds of problems. Middleware works at the application pipeline level, while action filters work at the MVC action level. Knowing when to use each will make your ASP.NET Core applications easier to structure and maintain.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 14 covers <code>appsettings.json</code>, user secrets, and environment-based configuration.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-13-entity-framework-core.html">Back</a>
+        <a class="nav-button" href="lesson-14-configuration.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

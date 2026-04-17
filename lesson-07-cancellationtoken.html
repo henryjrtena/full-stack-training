@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 7 - CancellationToken</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Resilience</span>
+      <h1>Lesson 7: CancellationToken</h1>
+      <p>Cancellation is an important part of modern .NET applications. If the client disconnects or the browser aborts a request, ASP.NET Core can signal that the work should stop.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p><code>CancellationToken</code> helps your app avoid wasting time on work the user no longer needs. This matters for slow database calls, long calculations, or AJAX requests that the user cancels.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>ASP.NET Core binds a request cancellation token automatically.</li>
+        <li>Pass the token to async APIs like Dapper, EF Core, and <code>Task.Delay</code>.</li>
+        <li>JavaScript can abort an active request if the user changes their mind.</li>
+        <li>Cancellation should be logged differently from real application failures.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Controller Action with Cancellation</h3>
+        <pre><code>[HttpPost]
+public async Task&lt;IActionResult&gt; CreateAjax(
+    TodoItem item,
+    CancellationToken cancellationToken)
+{
+    if (!ModelState.IsValid)
+    {
+        return BadRequest(ModelState);
+    }
+
+    await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+    return Json(new { success = true, message = "Saved after delay." });
+}</code></pre>
+      </article>
+      <article>
+        <h3>Abort a jQuery Request</h3>
+        <pre><code>&lt;script&gt;
+let currentRequest;
+
+$("#todo-form").on("submit", function (event) {
+    event.preventDefault();
+
+    if (currentRequest) {
+        currentRequest.abort();
+    }
+
+    currentRequest = $.ajax({
+        url: $(this).attr("action"),
+        type: "POST",
+        data: $(this).serialize()
+    });
+});
+
+$("#cancel-button").on("click", function () {
+    if (currentRequest) {
+        currentRequest.abort();
+    }
+});
+&lt;/script&gt;</code></pre>
+      </article>
+      <article>
+        <h3>Service Example</h3>
+        <pre><code>public async Task AddAsync(TodoItem item, CancellationToken cancellationToken)
+{
+    await Task.Delay(250, cancellationToken);
+    _items.Add(item);
+}</code></pre>
+      </article>
+      <article>
+        <h3>Handling OperationCanceledException</h3>
+        <pre><code>try
+{
+    await _todoService.AddAsync(item, cancellationToken);
+}
+catch (OperationCanceledException)
+{
+    return StatusCode(499);
+}</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Cancellation keeps the server efficient and aligns backend work with actual user intent. The next lesson uses a static in-memory store so we can implement full CRUD before adding dependency injection.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 8 builds a static <code>TodoStore</code> with a <code>List&lt;TodoItem&gt;</code> and basic CRUD operations.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-06-ajax-loading-ui.html">Back</a>
+        <a class="nav-button" href="lesson-08-static-in-memory.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

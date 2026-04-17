@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 11 - Repository Pattern</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Abstractions</span>
+      <h1>Lesson 11: Repository Pattern</h1>
+      <p>The repository pattern hides persistence details behind an interface so the rest of the app can focus on business behavior instead of SQL or EF-specific code.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>Once the app reaches the data layer, separation of concerns becomes critical. A repository keeps query and command logic together and creates a clean seam for testing or swapping implementations.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Interfaces define the persistence contract.</li>
+        <li>Repositories should be focused and task-oriented.</li>
+        <li>Controllers should not know whether data comes from memory, Dapper, or EF Core.</li>
+        <li>Application services can sit above repositories when business rules grow.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Repository Interface</h3>
+        <pre><code>using TodoMvcApp.Models;
+
+namespace TodoMvcApp.Data;
+
+public interface ITodoRepository
+{
+    Task&lt;IReadOnlyList&lt;TodoItem&gt;&gt; GetAllAsync(CancellationToken cancellationToken);
+    Task&lt;TodoItem?&gt; GetByIdAsync(int id, CancellationToken cancellationToken);
+    Task AddAsync(TodoItem item, CancellationToken cancellationToken);
+    Task UpdateAsync(TodoItem item, CancellationToken cancellationToken);
+    Task DeleteAsync(int id, CancellationToken cancellationToken);
+}</code></pre>
+      </article>
+      <article>
+        <h3>Dapper Implementation</h3>
+        <pre><code>public sealed class DapperTodoRepository : ITodoRepository
+{
+    // constructor omitted for brevity
+
+    public async Task&lt;TodoItem?&gt; GetByIdAsync(int id, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var command = new CommandDefinition(
+            "SELECT Id, Title, Description, DueDate, IsCompleted FROM dbo.TodoItems WHERE Id = @Id",
+            new { Id = id },
+            cancellationToken: cancellationToken);
+
+        return await connection.QuerySingleOrDefaultAsync&lt;TodoItem&gt;(command);
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Controller Depending on the Interface</h3>
+        <pre><code>public sealed class TodoController : Controller
+{
+    private readonly ITodoRepository _repository;
+
+    public TodoController(ITodoRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task&lt;IActionResult&gt; Index(CancellationToken cancellationToken)
+    {
+        var items = await _repository.GetAllAsync(cancellationToken);
+        return View(items);
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Registration</h3>
+        <pre><code>builder.Services.AddScoped&lt;ITodoRepository, DapperTodoRepository&gt;();</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>The repository pattern gives the rest of the application a stable interface while persistence implementations evolve. Next we will look at the Unit of Work concept and transactional coordination.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 12 introduces Unit of Work and explains when transactions become important.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-10-sql-server-dapper.html">Back</a>
+        <a class="nav-button" href="lesson-12-unit-of-work.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 10 - SQL Server and Dapper</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Persistence</span>
+      <h1>Lesson 10: SQL Server + Dapper</h1>
+      <p>Dapper is a lightweight micro-ORM that works very well when you want direct SQL control with minimal overhead.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>Now that our controller depends on abstractions, we can switch the backing store to SQL Server. We will use <code>Microsoft.Data.SqlClient</code>, Dapper async APIs, and the built-in secret store for local development.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Store connection strings in <code>secrets.json</code> during local development.</li>
+        <li>Use <code>Microsoft.Data.SqlClient</code> for SQL Server connections.</li>
+        <li>Use <code>QueryAsync</code> and <code>ExecuteAsync</code> with cancellation-aware command definitions.</li>
+        <li>Keep SQL in the repository or service layer, not in controllers.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Create the Table</h3>
+        <pre><code>CREATE TABLE dbo.TodoItems
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Title NVARCHAR(120) NOT NULL,
+    Description NVARCHAR(500) NULL,
+    DueDate DATE NULL,
+    IsCompleted BIT NOT NULL DEFAULT 0
+);</code></pre>
+      </article>
+      <article>
+        <h3>Configure the Secret</h3>
+        <pre><code>{
+  "ConnectionStrings": {
+    "TodoDb": "Server=(localdb)\\MSSQLLocalDB;Database=TodoMvcApp;Trusted_Connection=True;TrustServerCertificate=True;"
+  }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Dapper Repository</h3>
+        <pre><code>using Dapper;
+using Microsoft.Data.SqlClient;
+using TodoMvcApp.Models;
+
+namespace TodoMvcApp.Data;
+
+public sealed class DapperTodoRepository
+{
+    private readonly string _connectionString;
+
+    public DapperTodoRepository(IConfiguration configuration)
+    {
+        _connectionString = configuration.GetConnectionString("TodoDb")
+            ?? throw new InvalidOperationException("Missing TodoDb connection string.");
+    }
+
+    public async Task&lt;IReadOnlyList&lt;TodoItem&gt;&gt; GetAllAsync(CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var command = new CommandDefinition(
+            "SELECT Id, Title, Description, DueDate, IsCompleted FROM dbo.TodoItems ORDER BY Id DESC",
+            cancellationToken: cancellationToken);
+
+        var items = await connection.QueryAsync&lt;TodoItem&gt;(command);
+        return items.AsList();
+    }
+
+    public async Task AddAsync(TodoItem item, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            INSERT INTO dbo.TodoItems (Title, Description, DueDate, IsCompleted)
+            VALUES (@Title, @Description, @DueDate, @IsCompleted);
+            """;
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var command = new CommandDefinition(sql, item, cancellationToken: cancellationToken);
+        await connection.ExecuteAsync(command);
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Register the Repository</h3>
+        <pre><code>builder.Services.AddScoped&lt;DapperTodoRepository&gt;();</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Dapper gives us direct SQL access without abandoning the async and DI patterns established earlier. Next we will formalize this shape with a repository interface and cleaner separation of concerns.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 11 refactors the data layer into a repository pattern.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-09-dependency-injection.html">Back</a>
+        <a class="nav-button" href="lesson-11-repository-pattern.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

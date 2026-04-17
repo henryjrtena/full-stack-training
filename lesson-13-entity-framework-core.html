@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 13 - Entity Framework Core</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">ORM</span>
+      <h1>Lesson 13: Entity Framework Core (.NET 8)</h1>
+      <p>EF Core is a full ORM that tracks entities, generates SQL, and handles migrations, making it a strong choice for many business applications.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>Where Dapper gives you close control over SQL, EF Core gives you a higher-level programming model centered around <code>DbContext</code> and LINQ. Both approaches can work well in the same kind of application.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li><code>DbContext</code> represents a session with the database.</li>
+        <li><code>DbSet&lt;T&gt;</code> maps tables to entities.</li>
+        <li>Migrations track schema changes over time.</li>
+        <li>Async EF Core APIs accept <code>CancellationToken</code>.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Install the Required NuGet Packages</h3>
+        <pre><code>dotnet add package Microsoft.EntityFrameworkCore
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add package Microsoft.EntityFrameworkCore.Tools</code></pre>
+        <p><code>Microsoft.EntityFrameworkCore</code> provides the core ORM features, <code>Microsoft.EntityFrameworkCore.SqlServer</code> adds SQL Server support, and <code>Microsoft.EntityFrameworkCore.Tools</code> enables migrations and design-time commands.</p>
+      </article>
+      <article>
+        <h3>Create the DbContext</h3>
+        <pre><code>using Microsoft.EntityFrameworkCore;
+using TodoMvcApp.Models;
+
+namespace TodoMvcApp.Data;
+
+public sealed class TodoDbContext(DbContextOptions&lt;TodoDbContext&gt; options)
+    : DbContext(options)
+{
+    public DbSet&lt;TodoItem&gt; TodoItems =&gt; Set&lt;TodoItem&gt;();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity&lt;TodoItem&gt;(entity =&gt;
+        {
+            entity.Property(x =&gt; x.Title).HasMaxLength(120).IsRequired();
+            entity.Property(x =&gt; x.Description).HasMaxLength(500);
+        });
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Register EF Core in Program.cs</h3>
+        <pre><code>builder.Services.AddDbContext&lt;TodoDbContext&gt;(options =&gt;
+    options.UseSqlServer(builder.Configuration.GetConnectionString("TodoDb")));
+
+builder.Services.AddScoped&lt;ITodoRepository, EfTodoRepository&gt;();</code></pre>
+      </article>
+      <article>
+        <h3>EF Core Repository</h3>
+        <pre><code>using Microsoft.EntityFrameworkCore;
+using TodoMvcApp.Models;
+
+namespace TodoMvcApp.Data;
+
+public sealed class EfTodoRepository(TodoDbContext dbContext) : ITodoRepository
+{
+    public async Task&lt;IReadOnlyList&lt;TodoItem&gt;&gt; GetAllAsync(CancellationToken cancellationToken) =&gt;
+        await dbContext.TodoItems.OrderByDescending(x =&gt; x.Id).ToListAsync(cancellationToken);
+
+    public Task&lt;TodoItem?&gt; GetByIdAsync(int id, CancellationToken cancellationToken) =&gt;
+        dbContext.TodoItems.SingleOrDefaultAsync(x =&gt; x.Id == id, cancellationToken);
+
+    public async Task AddAsync(TodoItem item, CancellationToken cancellationToken)
+    {
+        await dbContext.TodoItems.AddAsync(item, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(TodoItem item, CancellationToken cancellationToken)
+    {
+        dbContext.TodoItems.Update(item);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken)
+    {
+        var entity = await dbContext.TodoItems.SingleOrDefaultAsync(x =&gt; x.Id == id, cancellationToken);
+        if (entity is null) return;
+        dbContext.TodoItems.Remove(entity);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Create a Migration</h3>
+        <pre><code>dotnet ef migrations add InitialCreate
+dotnet ef database update</code></pre>
+        <p>Dapper gives more control over SQL and can be excellent for hand-tuned queries. EF Core reduces repetitive code and provides change tracking, migrations, and richer LINQ support.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>EF Core is a productive default when you want schema management and object mapping built into the framework. Next we will organize configuration for development, secrets, and production environments.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 13.1 explores practical enhancements like pagination, filtering, and user experience improvements for the Todo application.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-12-unit-of-work.html">Back</a>
+        <a class="nav-button" href="lesson-14-global-exception-handling.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

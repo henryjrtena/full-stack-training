@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 8 - Static In-Memory Implementation</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Prototype Storage</span>
+      <h1>Lesson 8: Static In-Memory Implementation (No DI)</h1>
+      <p>Before introducing dependency injection and databases, we can learn the application flow with a simple static store.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>An in-memory implementation is perfect for demos and early lessons because it removes infrastructure complexity. It is not suitable for production, but it makes the MVC flow easy to understand.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>A static store keeps data only while the process is running.</li>
+        <li><code>List&lt;TodoItem&gt;</code> is enough for learning CRUD.</li>
+        <li>We can still write async methods even if the work is local.</li>
+        <li>This version intentionally avoids DI to show the contrast in the next lesson.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Create the Static Store</h3>
+        <pre><code>using TodoMvcApp.Models;
+
+namespace TodoMvcApp.Data;
+
+public static class TodoStore
+{
+    private static readonly List&lt;TodoItem&gt; Items =
+    [
+        new() { Id = 1, Title = "Learn MVC", DueDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)) },
+        new() { Id = 2, Title = "Add AJAX form", IsCompleted = true }
+    ];
+
+    private static int _nextId = 3;
+
+    public static Task&lt;IReadOnlyList&lt;TodoItem&gt;&gt; GetAllAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult&lt;IReadOnlyList&lt;TodoItem&gt;&gt;(Items.OrderBy(x =&gt; x.Id).ToList());
+    }
+
+    public static Task AddAsync(TodoItem item, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        item.Id = _nextId++;
+        Items.Add(item);
+        return Task.CompletedTask;
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Use the Store in the Controller</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc;
+using TodoMvcApp.Data;
+using TodoMvcApp.Models;
+
+namespace TodoMvcApp.Controllers;
+
+public sealed class TodoController : Controller
+{
+    public async Task&lt;IActionResult&gt; Index(CancellationToken cancellationToken)
+    {
+        var items = await TodoStore.GetAllAsync(cancellationToken);
+        return View(items);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task&lt;IActionResult&gt; Create(TodoItem item, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(item);
+        }
+
+        await TodoStore.AddAsync(item, cancellationToken);
+        return RedirectToAction(nameof(Index));
+    }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Limitations</h3>
+        <p>This design loses data on restart, is shared across all users, and is harder to test cleanly than an injected service. Those limitations are exactly why dependency injection is the next step.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>The static store helps us validate the end-to-end behavior quickly, but it mixes storage directly into the controller experience. Next we will modernize the design with .NET 8 dependency injection.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 8.1 introduces LINQ in a controller using fake Todo data and hands-on exercises with exact output.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-07-cancellationtoken.html">Back</a>
+        <a class="nav-button" href="lesson-08-01-linq-controller-hands-on.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

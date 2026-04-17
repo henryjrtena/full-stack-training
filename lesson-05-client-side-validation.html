@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 5 - Client-Side Validation</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Validation</span>
+      <h1>Lesson 5: Client-Side Validation</h1>
+      <p>Client-side validation improves the form experience by showing errors immediately, while server-side validation still remains the final authority.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>ASP.NET Core MVC uses model metadata from data annotations to generate validation rules. jQuery Validation and jQuery Unobtrusive Validation then read those rules from the rendered HTML.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Data annotations drive both client-side and server-side validation.</li>
+        <li><code>asp-validation-for</code> shows field-level messages.</li>
+        <li><code>asp-validation-summary</code> shows broader form errors.</li>
+        <li>Validation scripts are usually loaded from the shared layout or a partial.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Add Validation Summary</h3>
+        <pre><code>@model TodoMvcApp.Models.TodoItem
+
+&lt;form asp-action="Create" method="post"&gt;
+    @Html.AntiForgeryToken()
+    &lt;div asp-validation-summary="ModelOnly" class="text-danger"&gt;&lt;/div&gt;
+
+    &lt;label asp-for="Title"&gt;&lt;/label&gt;
+    &lt;input asp-for="Title" class="form-control" /&gt;
+    &lt;span asp-validation-for="Title" class="text-danger"&gt;&lt;/span&gt;
+
+    &lt;button type="submit"&gt;Save&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+      </article>
+      <article>
+        <h3>Render the Validation Script Partial</h3>
+        <pre><code>@section Scripts {
+    &lt;partial name="_ValidationScriptsPartial" /&gt;
+}</code></pre>
+      </article>
+      <article>
+        <h3>Example Partial Content</h3>
+        <pre><code>&lt;script src="~/lib/jquery/dist/jquery.min.js"&gt;&lt;/script&gt;
+&lt;script src="~/lib/jquery-validation/dist/jquery.validate.min.js"&gt;&lt;/script&gt;
+&lt;script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"&gt;&lt;/script&gt;</code></pre>
+      </article>
+      <article>
+        <h3>Server Validation Still Matters</h3>
+        <pre><code>[HttpPost]
+[ValidateAntiForgeryToken]
+public IActionResult Create(TodoItem item)
+{
+    if (!ModelState.IsValid)
+    {
+        return View(item);
+    }
+
+    return RedirectToAction(nameof(Index));
+}</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Client-side validation makes the form feel faster and clearer, but server validation remains essential because browser rules can be bypassed. Next we will make form submission asynchronous with jQuery AJAX and a loading state.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 6 introduces jQuery AJAX, a loading indicator, and button disabling during form submission.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-04-razor-views.html">Back</a>
+        <a class="nav-button" href="lesson-06-ajax-loading-ui.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

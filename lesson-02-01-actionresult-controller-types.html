@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 2.1 - ActionResult, IActionResult, ControllerBase, and Controller</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#ffffff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--accent:#d97706;--line:#d8e1ea;--code:#0b1120;}
+    *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.06);padding:28px;margin-bottom:24px}
+    h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}code{font-family:Consolas,monospace}.next{border-left:5px solid var(--brand);padding-left:16px}
+    .nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}
+    .eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem;letter-spacing:.02em}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">ASP.NET Core MVC Todo Application (.NET 8)</span>
+      <h1>Lesson 2.1: ActionResult, IActionResult, ControllerBase, and Controller</h1>
+      <p>Before we create our Todo model, it helps to understand what MVC actions return and which controller base class fits different application styles. These concepts appear constantly in ASP.NET Core MVC and Web API projects.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>In ASP.NET Core, controller actions do not usually return raw text directly. Instead, they return result types that describe what the framework should send back to the client. That might be a Razor view, a JSON response, a redirect, or an HTTP status code.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li><code>IActionResult</code> is an interface representing an action result.</li>
+        <li><code>ActionResult</code> is a concrete base class for many MVC results.</li>
+        <li>ASP.NET Core provides helper methods like <code>View()</code>, <code>Json()</code>, <code>Ok()</code>, <code>NotFound()</code>, and <code>RedirectToAction()</code>.</li>
+        <li><code>ControllerBase</code> is commonly used for APIs.</li>
+        <li><code>ModelState</code> and <code>ModelState.IsValid</code> are available on <code>ControllerBase</code>.</li>
+        <li>A regular <code>Controller</code> without <code>[ApiController]</code> usually checks <code>ModelState.IsValid</code> manually.</li>
+        <li><code>Controller</code> extends <code>ControllerBase</code> and adds view-related support for MVC apps.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>What IActionResult Means</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc;
+
+public sealed class TodoController : Controller
+{
+    public IActionResult Index()
+    {
+        return View();
+    }
+}</code></pre>
+        <p><code>IActionResult</code> is a flexible return type. It says, “this action will return something ASP.NET Core can execute as a response,” but it does not lock you into one exact result class.</p>
+      </article>
+      <article>
+        <h3>Returning Different Result Types</h3>
+        <pre><code>public IActionResult Details(int id)
+{
+    if (id &lt;= 0)
+    {
+        return BadRequest();
+    }
+
+    if (id == 404)
+    {
+        return NotFound();
+    }
+
+    return View();
+}</code></pre>
+        <p>This is one reason <code>IActionResult</code> is useful. A single action can return different response types depending on the situation.</p>
+      </article>
+      <article>
+        <h3>What ActionResult Means</h3>
+        <pre><code>public ActionResult CreateSuccess()
+{
+    return RedirectToAction(nameof(Index));
+}</code></pre>
+        <p><code>ActionResult</code> is the base class used by many framework result types. In practice, beginners most often use <code>IActionResult</code> for flexibility, while advanced code may use more specific return types where that improves clarity.</p>
+      </article>
+      <article>
+        <h3>ActionResult&lt;T&gt; for APIs</h3>
+        <pre><code>[HttpGet]
+public ActionResult&lt;TodoItem&gt; GetById(int id)
+{
+    if (id &lt;= 0)
+    {
+        return BadRequest();
+    }
+
+    var item = new TodoItem { Id = id, Title = "Sample todo" };
+    return item;
+}</code></pre>
+        <p><code>ActionResult&lt;T&gt;</code> is common in APIs because it allows you to return either a typed value or an error result like <code>NotFound()</code> or <code>BadRequest()</code>.</p>
+      </article>
+      <article>
+        <h3>ControllerBase</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/[controller]")]
+public sealed class TodoApiController : ControllerBase
+{
+    [HttpGet("{id:int}")]
+    public ActionResult&lt;object&gt; Get(int id)
+    {
+        return Ok(new { Id = id, Title = "API todo" });
+    }
+}</code></pre>
+        <p><code>ControllerBase</code> gives you core web features like model binding, <code>ModelState</code> validation support, and HTTP result helpers, but it does not include Razor view support.</p>
+      </article>
+      <article>
+        <h3>ModelState.IsValid Is Built into ControllerBase</h3>
+        <pre><code>[HttpPost]
+public IActionResult Create(TodoItem item)
+{
+    if (!ModelState.IsValid)
+    {
+        return BadRequest(ModelState);
+    }
+
+    return Ok();
+}</code></pre>
+        <p>You do not need to inherit from <code>Controller</code> just to use <code>ModelState.IsValid</code>. That feature is already available in <code>ControllerBase</code>, which is one reason API controllers can validate input cleanly without Razor view support.</p>
+      </article>
+      <article>
+        <h3>Regular MVC Controllers Usually Validate Manually</h3>
+        <pre><code>public sealed class TodoController : Controller
+{
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Create(TodoItem item)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(item);
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+}</code></pre>
+        <p>In a normal MVC controller, if you are not using <code>[ApiController]</code>, ASP.NET Core does not automatically stop the request and return a validation response for you. You usually check <code>ModelState.IsValid</code> yourself and return the same view so the user can fix the form input.</p>
+      </article>
+      <article>
+        <h3>Controller</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc;
+
+public sealed class TodoController : Controller
+{
+    public IActionResult Index()
+    {
+        return View();
+    }
+}</code></pre>
+        <p><code>Controller</code> inherits from <code>ControllerBase</code> and adds MVC view features like <code>View()</code>, <code>PartialView()</code>, <code>ViewData</code>, and <code>TempData</code>. For a Razor-based MVC application like this Todo app, <code>Controller</code> is usually the right choice.</p>
+      </article>
+      <article>
+        <h3>ControllerBase vs Controller</h3>
+        <pre><code>// Best for APIs
+public sealed class TodoApiController : ControllerBase
+{
+}
+
+// Best for MVC with Razor views
+public sealed class TodoController : Controller
+{
+}</code></pre>
+        <p>Use <code>ControllerBase</code> when your endpoint is focused on data and HTTP responses. Use <code>Controller</code> when your endpoint needs to render views.</p>
+      </article>
+      <article>
+        <h3>Common MVC Result Helpers</h3>
+        <pre><code>return View(model);
+return RedirectToAction(nameof(Index));
+return NotFound();
+return BadRequest();
+return Json(new { success = true });
+return Content("Hello from MVC");</code></pre>
+        <p>These helpers create result objects for you. That keeps action methods concise and readable.</p>
+      </article>
+      <article>
+        <h3>Async Version with IActionResult</h3>
+        <pre><code>public async Task&lt;IActionResult&gt; Index(CancellationToken cancellationToken)
+{
+    await Task.Delay(10, cancellationToken);
+    return View();
+}</code></pre>
+        <p>In modern .NET 8 applications, controller actions are often asynchronous, especially when they call databases, APIs, or services.</p>
+      </article>
+      <article>
+        <h3>How This Fits Our Todo App</h3>
+        <p>Our server-rendered Todo MVC application will mainly use <code>Controller</code> because it returns Razor views. Later, when we add AJAX and JSON responses, the same controller can still return <code>IActionResult</code> values like <code>Json()</code>, <code>BadRequest()</code>, or <code>RedirectToAction()</code>.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p><code>IActionResult</code> gives controller actions flexibility, <code>ActionResult</code> is the base class behind many result types, <code>ControllerBase</code> is great for APIs, and <code>Controller</code> is usually the correct choice for MVC with Razor views. Understanding these now will make the rest of the Todo app code much easier to follow.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 3 defines the <code>TodoItem</code> model and adds validation with data annotations.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-02-project-setup.html">Back</a>
+        <a class="nav-button" href="lesson-03-todo-model.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

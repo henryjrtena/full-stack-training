@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 3 - Creating the Todo Model</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Domain Model</span>
+      <h1>Lesson 3: Creating the Todo Model</h1>
+      <p>The model holds the shape of our Todo data and defines validation rules that both controllers and views can respect.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>Every MVC application starts with a domain model. For the Todo app, that model needs properties for the task title, details, due date, and completion state.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Models represent application data.</li>
+        <li>Data annotations add validation and UI metadata.</li>
+        <li>Validation errors flow naturally into Razor views.</li>
+        <li>A consistent model makes it easier to switch storage approaches later.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Create TodoItem</h3>
+        <pre><code>using System.ComponentModel.DataAnnotations;
+
+namespace TodoMvcApp.Models;
+
+public sealed class TodoItem
+{
+    public int Id { get; set; }
+
+    [Required]
+    [StringLength(120, MinimumLength = 3)]
+    public string Title { get; set; } = string.Empty;
+
+    [StringLength(500)]
+    public string? Description { get; set; }
+
+    [Display(Name = "Due date")]
+    [DataType(DataType.Date)]
+    public DateOnly? DueDate { get; set; }
+
+    public bool IsCompleted { get; set; }
+}</code></pre>
+      </article>
+      <article>
+        <h3>Why These Attributes Matter</h3>
+        <p><code>[Required]</code> ensures a title is provided. <code>[StringLength]</code> prevents values that are too short or too long. <code>[Display]</code> improves labels in Razor views, and <code>[DataType]</code> helps render a date-focused input.</p>
+      </article>
+      <article>
+        <h3>Other Common Data Annotations</h3>
+        <pre><code>using System.ComponentModel.DataAnnotations;
+
+public sealed class TodoItem
+{
+    public int Id { get; set; }
+
+    [Required]
+    [StringLength(120, MinimumLength = 3)]
+    public string Title { get; set; } = string.Empty;
+
+    [StringLength(500)]
+    public string? Description { get; set; }
+
+    [Range(1, 5)]
+    public int Priority { get; set; } = 1;
+
+    [Display(Name = "Owner email")]
+    [EmailAddress]
+    public string? OwnerEmail { get; set; }
+
+    [Display(Name = "Confirm owner email")]
+    [Compare(nameof(OwnerEmail), ErrorMessage = "Email addresses must match.")]
+    public string? ConfirmOwnerEmail { get; set; }
+
+    [Phone]
+    public string? ContactNumber { get; set; }
+
+    [Url]
+    public string? ReferenceLink { get; set; }
+}</code></pre>
+        <p>ASP.NET Core supports many validation annotations beyond the basics. <code>[Range]</code> is useful for numbers, <code>[EmailAddress]</code> validates email-shaped input, <code>[Compare]</code> checks that one property matches another, <code>[Phone]</code> helps validate contact numbers, and <code>[Url]</code> is useful when your model accepts links. These attributes work well with both server-side validation and client-side validation in MVC forms.</p>
+      </article>
+      <article>
+        <h3>Formatting and Metadata Annotations</h3>
+        <pre><code>public sealed class TodoItem
+{
+    [Display(Name = "Due date")]
+    [DataType(DataType.Date)]
+    public DateOnly? DueDate { get; set; }
+
+    [Display(Name = "Estimated cost")]
+    [DisplayFormat(DataFormatString = "{0:C}")]
+    public decimal? EstimatedCost { get; set; }
+
+    [ScaffoldColumn(false)]
+    public DateTime CreatedUtc { get; set; }
+}</code></pre>
+        <p>Not every annotation is about validation. Some are about display and scaffolding. <code>[DisplayFormat]</code> changes how a value is rendered, while <code>[ScaffoldColumn(false)]</code> can hide fields from generated forms and UI scaffolding.</p>
+      </article>
+      <article>
+        <h3>When to Use Data Annotations Carefully</h3>
+        <ul>
+          <li>Use them for simple validation rules close to the model.</li>
+          <li>Use them for labels and UI metadata that belong to the model.</li>
+          <li>Avoid putting heavy business rules into attributes when the logic depends on services or database state.</li>
+          <li>For more complex validation, use custom validation attributes, action filters, or service-layer rules.</li>
+        </ul>
+      </article>
+      <article>
+        <h3>Bind and Validate in a Controller</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc;
+using TodoMvcApp.Models;
+
+namespace TodoMvcApp.Controllers;
+
+public sealed class TodoController : Controller
+{
+    [HttpGet]
+    public IActionResult Create() =&gt; View(new TodoItem());
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Create(TodoItem item)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(item);
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    public IActionResult Index() =&gt; View();
+}</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Our <code>TodoItem</code> model is small but complete enough to support validation, forms, and future persistence layers. Next we will render this model with Razor views and tag helpers.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 4 creates the Todo list and form views using Razor syntax and <code>asp-for</code> tag helpers.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-02-01-actionresult-controller-types.html">Back</a>
+        <a class="nav-button" href="lesson-04-razor-views.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

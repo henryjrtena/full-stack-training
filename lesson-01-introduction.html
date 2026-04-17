@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 1 - Introduction to ASP.NET Core MVC Todo Application (.NET 8)</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#ffffff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--accent:#d97706;--line:#d8e1ea;--code:#0b1120;}
+    *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.06);padding:28px;margin-bottom:24px}
+    h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}code{font-family:Consolas,monospace}.next{border-left:5px solid var(--brand);padding-left:16px}
+    .nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}
+    .eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem;letter-spacing:.02em}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">ASP.NET Core MVC Todo Application (.NET 8)</span>
+      <h1>Lesson 1: Introduction</h1>
+      <p>This course builds a complete Todo application with ASP.NET Core MVC on .NET 8. We will start with the MVC architecture, then move from simple in-memory storage to Dapper and Entity Framework Core, while keeping everything aligned with modern <code>Program.cs</code> and minimal hosting patterns.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>ASP.NET Core MVC is a server-side web framework for building maintainable applications with clear separation between user interface, application flow, and domain data. In .NET 8, the preferred setup uses the minimal hosting model in <code>Program.cs</code> instead of the older <code>Startup.cs</code> file.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Model represents Todo data and validation rules.</li>
+        <li>View renders Razor pages for listing and editing todos.</li>
+        <li>Controller handles requests, coordinates services, and returns views or JSON.</li>
+        <li>.NET 8 uses <code>WebApplication.CreateBuilder(args)</code> and <code>builder.Build()</code>.</li>
+        <li>Async code and cancellation support help the app remain responsive.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>What We Are Building</h2>
+      <article>
+        <h3>Application Features</h3>
+        <p>Our Todo app will list tasks, create new tasks, mark tasks complete, edit existing tasks, and delete items. Early lessons use a simple store so we can focus on MVC, then later lessons introduce dependency injection, repositories, Dapper, EF Core, testing, and deployment.</p>
+      </article>
+      <article>
+        <h3>MVC Request Flow</h3>
+        <p>A browser requests <code>/Todo</code>. The <code>TodoController</code> calls application logic, loads Todo items, and returns a Razor view. The view displays the items with HTML generated on the server.</p>
+        <pre><code>Browser Request
+    -&gt; Routing
+    -&gt; TodoController
+    -&gt; Model / Service / Repository
+    -&gt; Razor View
+    -&gt; HTML Response</code></pre>
+      </article>
+      <article>
+        <h3>Preview of Modern .NET 8 Hosting</h3>
+        <pre><code>var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Todo}/{action=Index}/{id?}");
+
+app.Run();</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>ASP.NET Core MVC gives us a clear structure for building a web application, and .NET 8 simplifies startup with a single <code>Program.cs</code> entry point. Our Todo app will be the thread that connects every lesson from presentation to persistence and deployment.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 1.1 introduces core C# basics along with the cleaner, modern syntax patterns commonly used in .NET 8 applications.</p>
+      <div class="nav-buttons">
+        <a class="nav-button" href="lesson-01-01-dotnet-basic-syntax.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

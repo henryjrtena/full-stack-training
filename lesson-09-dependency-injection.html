@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 9 - Dependency Injection</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Architecture</span>
+      <h1>Lesson 9: Dependency Injection (.NET 8 Style)</h1>
+      <p>Dependency injection keeps controllers focused on request handling while services take responsibility for business and data access concerns.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>ASP.NET Core has a built-in DI container. In .NET 8, we register services directly in <code>Program.cs</code> and request them through constructor injection.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Interfaces define contracts.</li>
+        <li>Service lifetimes include singleton, scoped, and transient.</li>
+        <li>Controllers should depend on abstractions, not concrete details.</li>
+        <li>DI improves testing and maintainability.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Define the Service Contract</h3>
+        <pre><code>using TodoMvcApp.Models;
+
+namespace TodoMvcApp.Services;
+
+public interface ITodoService
+{
+    Task&lt;IReadOnlyList&lt;TodoItem&gt;&gt; GetAllAsync(CancellationToken cancellationToken);
+    Task AddAsync(TodoItem item, CancellationToken cancellationToken);
+}</code></pre>
+      </article>
+      <article>
+        <h3>Create the Service Implementation</h3>
+        <pre><code>using TodoMvcApp.Data;
+using TodoMvcApp.Models;
+
+namespace TodoMvcApp.Services;
+
+public sealed class InMemoryTodoService : ITodoService
+{
+    public Task&lt;IReadOnlyList&lt;TodoItem&gt;&gt; GetAllAsync(CancellationToken cancellationToken) =&gt;
+        TodoStore.GetAllAsync(cancellationToken);
+
+    public Task AddAsync(TodoItem item, CancellationToken cancellationToken) =&gt;
+        TodoStore.AddAsync(item, cancellationToken);
+}</code></pre>
+      </article>
+      <article>
+        <h3>Register in Program.cs</h3>
+        <pre><code>var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton&lt;ITodoService, InMemoryTodoService&gt;();
+
+var app = builder.Build();</code></pre>
+      </article>
+      <article>
+        <h3>Inject into the Controller</h3>
+        <pre><code>public sealed class TodoController : Controller
+{
+    private readonly ITodoService _todoService;
+
+    public TodoController(ITodoService todoService)
+    {
+        _todoService = todoService;
+    }
+
+    public async Task&lt;IActionResult&gt; Index(CancellationToken cancellationToken)
+    {
+        var items = await _todoService.GetAllAsync(cancellationToken);
+        return View(items);
+    }
+}</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>DI is the bridge from prototype code to real application structure. Next we will swap the in-memory service for SQL Server with Dapper while keeping the controller logic clean.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 10 connects the Todo app to SQL Server using Dapper, secrets, and cancellation-aware async data access.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-08-01-linq-controller-hands-on.html">Back</a>
+        <a class="nav-button" href="lesson-10-sql-server-dapper.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

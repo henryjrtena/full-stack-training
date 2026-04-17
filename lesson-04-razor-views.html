@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 4 - Razor Views</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Presentation Layer</span>
+      <h1>Lesson 4: Razor Views</h1>
+      <p>Razor views combine HTML with C# expressions, making it easy to render lists, forms, and validation messages in a strongly typed MVC application.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>Our Todo application needs a list page and a form page. We will build both with strongly typed Razor views and tag helpers for clean markup.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Use <code>@model</code> to strongly type a Razor view.</li>
+        <li>Loop through collections with standard C# syntax.</li>
+        <li>Use tag helpers like <code>asp-for</code>, <code>asp-action</code>, <code>asp-controller</code>, and <code>asp-route-*</code>.</li>
+        <li>Keep layout and form markup clear and readable.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Index View</h3>
+        <pre><code>@model IReadOnlyList&lt;TodoMvcApp.Models.TodoItem&gt;
+
+@{
+    ViewData["Title"] = "Todo List";
+}
+
+&lt;h1&gt;Todo List&lt;/h1&gt;
+&lt;p&gt;&lt;a asp-action="Create" class="btn btn-primary"&gt;Add Todo&lt;/a&gt;&lt;/p&gt;
+
+&lt;table class="table"&gt;
+    &lt;thead&gt;
+        &lt;tr&gt;
+            &lt;th&gt;Title&lt;/th&gt;
+            &lt;th&gt;Due Date&lt;/th&gt;
+            &lt;th&gt;Status&lt;/th&gt;
+        &lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody&gt;
+    @foreach (var item in Model)
+    {
+        &lt;tr&gt;
+            &lt;td&gt;@item.Title&lt;/td&gt;
+            &lt;td&gt;@item.DueDate?.ToString("yyyy-MM-dd")&lt;/td&gt;
+            &lt;td&gt;@(item.IsCompleted ? "Done" : "Open")&lt;/td&gt;
+        &lt;/tr&gt;
+    }
+    &lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+      </article>
+      <article>
+        <h3>Create View with Tag Helpers</h3>
+        <pre><code>@model TodoMvcApp.Models.TodoItem
+
+@{
+    ViewData["Title"] = "Create Todo";
+}
+
+&lt;h1&gt;Create Todo&lt;/h1&gt;
+
+&lt;form asp-action="Create" method="post"&gt;
+    @Html.AntiForgeryToken()
+
+    &lt;div class="mb-3"&gt;
+        &lt;label asp-for="Title" class="form-label"&gt;&lt;/label&gt;
+        &lt;input asp-for="Title" class="form-control" /&gt;
+        &lt;span asp-validation-for="Title" class="text-danger"&gt;&lt;/span&gt;
+    &lt;/div&gt;
+
+    &lt;div class="mb-3"&gt;
+        &lt;label asp-for="Description" class="form-label"&gt;&lt;/label&gt;
+        &lt;textarea asp-for="Description" class="form-control"&gt;&lt;/textarea&gt;
+        &lt;span asp-validation-for="Description" class="text-danger"&gt;&lt;/span&gt;
+    &lt;/div&gt;
+
+    &lt;div class="mb-3"&gt;
+        &lt;label asp-for="DueDate" class="form-label"&gt;&lt;/label&gt;
+        &lt;input asp-for="DueDate" class="form-control" /&gt;
+        &lt;span asp-validation-for="DueDate" class="text-danger"&gt;&lt;/span&gt;
+    &lt;/div&gt;
+
+    &lt;button type="submit" class="btn btn-success"&gt;Save&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+      </article>
+      <article>
+        <h3>Other Common HTML Tag Helpers</h3>
+        <pre><code>@model TodoMvcApp.Models.TodoItem
+
+&lt;a asp-controller="Todo" asp-action="Index" class="btn btn-secondary"&gt;Back to List&lt;/a&gt;
+
+&lt;a asp-controller="Todo" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning"&gt;
+    Edit
+&lt;/a&gt;
+
+&lt;form asp-controller="Todo" asp-action="Delete" asp-route-id="@Model.Id" method="post"&gt;
+    @Html.AntiForgeryToken()
+    &lt;button type="submit" class="btn btn-danger"&gt;Delete&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;input asp-for="Title" class="form-control" /&gt;
+&lt;label asp-for="Title" class="form-label"&gt;&lt;/label&gt;
+&lt;span asp-validation-for="Title" class="text-danger"&gt;&lt;/span&gt;
+
+&lt;select asp-for="IsCompleted" class="form-select"&gt;
+    &lt;option value="false"&gt;Open&lt;/option&gt;
+    &lt;option value="true"&gt;Done&lt;/option&gt;
+&lt;/select&gt;
+
+&lt;partial name="_ValidationScriptsPartial" /&gt;
+
+&lt;environment include="Development"&gt;
+    &lt;script src="~/js/todo-debug.js"&gt;&lt;/script&gt;
+&lt;/environment&gt;</code></pre>
+        <p>Razor supports many HTML tag helpers beyond simple form binding. Anchor tag helpers use <code>asp-controller</code>, <code>asp-action</code>, and <code>asp-route-*</code> to generate links. Form tag helpers help build safe post forms, while label, input, select, validation, partial, and environment tag helpers keep markup more maintainable.</p>
+      </article>
+      <article>
+        <h3>Classic HTML Helper Style</h3>
+        <pre><code>@model TodoMvcApp.ViewModels.TodoFormViewModel
+
+@Html.LabelFor(model =&gt; model.Title, new { @class = "form-label" })
+@Html.TextBoxFor(model =&gt; model.Title, new { @class = "form-control" })
+@Html.ValidationMessageFor(model =&gt; model.Title, "", new { @class = "text-danger" })
+
+@Html.LabelFor(model =&gt; model.Status, new { @class = "form-label" })
+@Html.DropDownListFor(
+    model =&gt; model.Status,
+    Model.StatusOptions,
+    "-- Select status --",
+    new { @class = "form-select" })
+
+@Html.ValidationSummary(false, "", new { @class = "text-danger" })</code></pre>
+        <p>Before tag helpers became the preferred Razor style, MVC views often used HTML helpers such as <code>LabelFor</code>, <code>TextBoxFor</code>, <code>ValidationMessageFor</code>, and <code>DropDownListFor</code>. These helpers are still valid in ASP.NET Core MVC and you will still see them in many existing projects.</p>
+      </article>
+      <article>
+        <h3>HTML Helper vs Tag Helper</h3>
+        <pre><code>// HTML helper style
+@Html.DropDownListFor(
+    model =&gt; model.Status,
+    Model.StatusOptions,
+    "-- Select status --",
+    new { @class = "form-select" })
+
+// Tag helper style
+&lt;select asp-for="Status" asp-items="Model.StatusOptions" class="form-select"&gt;
+    &lt;option value=""&gt;-- Select status --&lt;/option&gt;
+&lt;/select&gt;</code></pre>
+        <p>The HTML helper style is method-based and lives inside C# expressions. The tag helper style feels more like regular HTML and is usually easier to read in modern Razor views. Both approaches are supported, so it is useful to recognize both when reading or maintaining MVC code.</p>
+      </article>
+      <article>
+        <h3>What These Tag Helpers Do</h3>
+        <ul>
+          <li><code>asp-controller</code> chooses which controller the generated URL targets.</li>
+          <li><code>asp-action</code> points to the action method for the link or form.</li>
+          <li><code>asp-route-id</code> and similar attributes pass route values into generated URLs.</li>
+          <li><code>asp-for</code> binds elements like <code>input</code>, <code>label</code>, and <code>select</code> to model properties.</li>
+          <li><code>asp-validation-for</code> renders validation messages for a property.</li>
+          <li><code>partial</code> renders a reusable partial view.</li>
+          <li><code>environment</code> conditionally renders markup based on the current hosting environment.</li>
+        </ul>
+      </article>
+      <article>
+        <h3>Controller Feeding the Views</h3>
+        <pre><code>public IActionResult Index()
+{
+    var items = Array.Empty&lt;TodoItem&gt;();
+    return View(items);
+}
+
+[HttpGet]
+public IActionResult Create()
+{
+    return View(new TodoItem());
+}</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Razor views give us strongly typed rendering and cleaner form generation through tag helpers. Next we will turn on client-side validation so users get immediate feedback in the browser.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 5 adds jQuery validation and unobtrusive validation to the Todo form.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-03-todo-model.html">Back</a>
+        <a class="nav-button" href="lesson-05-client-side-validation.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

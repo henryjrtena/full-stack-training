@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 12 - Unit of Work</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Transactions</span>
+      <h1>Lesson 12: Unit of Work</h1>
+      <p>Unit of Work coordinates multiple repository actions so they succeed or fail together as one logical transaction.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>If a feature touches several tables or requires a sequence of updates, a Unit of Work can provide transaction boundaries and a single commit point.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Use Unit of Work when one user operation spans multiple writes.</li>
+        <li>Transactions help maintain consistency.</li>
+        <li>EF Core already behaves like a unit of work through <code>DbContext</code>.</li>
+        <li>With Dapper, you can manage a shared connection and transaction explicitly.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Define the Contract</h3>
+        <pre><code>public interface IUnitOfWork
+{
+    ITodoRepository Todos { get; }
+    Task BeginAsync(CancellationToken cancellationToken);
+    Task CommitAsync(CancellationToken cancellationToken);
+    Task RollbackAsync(CancellationToken cancellationToken);
+}</code></pre>
+      </article>
+      <article>
+        <h3>Example Dapper-Oriented Shape</h3>
+        <pre><code>public sealed class SqlUnitOfWork : IUnitOfWork, IAsyncDisposable
+{
+    private readonly SqlConnection _connection;
+    private SqlTransaction? _transaction;
+
+    public SqlUnitOfWork(IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("TodoDb")
+            ?? throw new InvalidOperationException("Missing TodoDb connection string.");
+        _connection = new SqlConnection(connectionString);
+        Todos = new TransactionalTodoRepository(_connection, () =&gt; _transaction);
+    }
+
+    public ITodoRepository Todos { get; }
+
+    public async Task BeginAsync(CancellationToken cancellationToken)
+    {
+        await _connection.OpenAsync(cancellationToken);
+        _transaction = (SqlTransaction)await _connection.BeginTransactionAsync(cancellationToken);
+    }
+
+    public Task CommitAsync(CancellationToken cancellationToken) =&gt;
+        _transaction!.CommitAsync(cancellationToken);
+
+    public Task RollbackAsync(CancellationToken cancellationToken) =&gt;
+        _transaction!.RollbackAsync(cancellationToken).AsTask();
+
+    public ValueTask DisposeAsync() =&gt; _connection.DisposeAsync();
+}</code></pre>
+      </article>
+      <article>
+        <h3>Use It Carefully</h3>
+        <pre><code>await _unitOfWork.BeginAsync(cancellationToken);
+try
+{
+    await _unitOfWork.Todos.AddAsync(item, cancellationToken);
+    await _auditRepository.WriteEntryAsync("Todo created", cancellationToken);
+    await _unitOfWork.CommitAsync(cancellationToken);
+}
+catch
+{
+    await _unitOfWork.RollbackAsync(cancellationToken);
+    throw;
+}</code></pre>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Unit of Work is valuable when operations must commit together, but it should be introduced for a real need rather than by habit. Next we will implement the Todo app with Entity Framework Core in .NET 8 and compare the experience with Dapper.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Lesson 13 builds the Todo app with EF Core, migrations, and async CRUD.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-11-repository-pattern.html">Back</a>
+        <a class="nav-button" href="lesson-13-entity-framework-core.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
