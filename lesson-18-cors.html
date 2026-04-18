@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 18 - CORS Configuration</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">API Security</span>
+      <h1>Lesson 18: CORS Configuration</h1>
+      <p>Learn to configure Cross-Origin Resource Sharing (CORS) for secure cross-domain requests in your ASP.NET Core API.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>CORS (Cross-Origin Resource Sharing) is essential for modern web APIs that need to be accessed from web browsers. It controls which domains can make requests to your API and what types of requests are allowed.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>CORS enables secure cross-origin requests from web browsers.</li>
+        <li>Preflight requests are sent by browsers for complex HTTP methods.</li>
+        <li>CORS policies define allowed origins, methods, and headers.</li>
+        <li>Controller and action-level attributes provide fine-grained control.</li>
+        <li>Proper CORS configuration prevents unauthorized cross-origin access.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>CORS Configuration in Program.cs</h3>
+        <pre><code>var builder = WebApplication.CreateBuilder(args);
+
+// Add CORS services
+builder.Services.AddCors(options =&gt;
+{
+    options.AddPolicy("AllowSpecificOrigins", policy =&gt;
+    {
+        policy.WithOrigins("https://localhost:3000", "https://myapp.com")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+
+    options.AddPolicy("AllowAll", policy =&gt;
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+// Use CORS middleware (must be before UseRouting)
+app.UseCors("AllowSpecificOrigins"); // or "AllowAll" for development
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();</code></pre>
+        <p>Configure CORS policies and apply them in the middleware pipeline. Use specific origins in production for security.</p>
+      </article>
+      <article>
+        <h3>Controller with CORS Attributes</h3>
+        <pre><code>using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Mvc;
+
+namespace GroceryApi.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [EnableCors("AllowSpecificOrigins")]
+    public class GroceriesController : ControllerBase
+    {
+        [HttpGet]
+        [DisableCors]
+        public IActionResult GetGroceries()
+        {
+            // This endpoint disables CORS
+            return Ok(new[] { "item1", "item2" });
+        }
+
+        [HttpPost]
+        public IActionResult CreateGrocery([FromBody] GroceryItem item)
+        {
+            // This endpoint uses the controller-level CORS policy
+            return CreatedAtAction(nameof(GetGrocery), new { id = 1 }, item);
+        }
+
+        [HttpGet("{id}")]
+        [EnableCors("AllowAll")]
+        public IActionResult GetGrocery(int id)
+        {
+            // This endpoint allows all origins
+            return Ok(new { id, name = "Sample Item" });
+        }
+    }
+}</code></pre>
+        <p>Use CORS attributes at controller and action levels to fine-tune cross-origin access policies.</p>
+      </article>
+      <article>
+        <h3>CORS Policy Options</h3>
+        <pre><code>// Specific origins (recommended for production)
+policy.WithOrigins("https://myapp.com", "https://admin.myapp.com")
+
+// Allow any origin (use only for development)
+policy.AllowAnyOrigin()
+
+// Allow specific HTTP methods
+policy.WithMethods("GET", "POST", "PUT", "DELETE")
+
+// Allow specific headers
+policy.WithHeaders("Content-Type", "Authorization")
+
+// Allow credentials (cookies, authorization headers)
+policy.AllowCredentials()
+
+// Set preflight cache duration
+policy.SetPreflightMaxAge(TimeSpan.FromMinutes(10))</code></pre>
+        <p>CORS policies provide granular control over cross-origin access. Always use specific origins in production environments.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>CORS is crucial for securing modern web APIs that need to be accessed from web browsers. Proper CORS configuration ensures that only authorized domains can make cross-origin requests to your API.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Explore advanced ASP.NET Core topics and deployment strategies.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-17-jwt-token.html">Back</a>
+        <a class="nav-button" href="lesson-19-deployment.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

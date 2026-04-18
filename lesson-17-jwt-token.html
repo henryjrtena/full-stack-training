@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 17 - JWT Token Authentication</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Security</span>
+      <h1>Lesson 17: JWT Token Authentication</h1>
+      <p>Learn how to secure ASP.NET Core APIs with JSON Web Tokens and add a login endpoint to issue tokens.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>JWT authentication lets clients authenticate once and send a signed token with each request. This lesson shows how to configure JWT bearer authentication in Program.cs and implement a login endpoint that issues tokens.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>JWT tokens are self-contained, signed claims payloads.</li>
+        <li>Bearer authentication reads a token from the Authorization header.</li>
+        <li>Token validation verifies issuer, audience, lifetime, and signature.</li>
+        <li>Login endpoints issue tokens after user credentials are verified.</li>
+        <li>Authorized endpoints require a valid token to access.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Install the JWT Package</h3>
+        <pre><code>dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer</code></pre>
+        <p>Install the ASP.NET Core JWT bearer authentication package before configuring authentication in Program.cs.</p>
+      </article>
+      <article>
+        <h3>JWT Settings in appsettings.json</h3>
+        <pre><code>{
+  "Jwt": {
+    "Key": "super_secret_key_12345",
+    "Issuer": "GroceryApi",
+    "Audience": "GroceryApiUsers",
+    "DurationMinutes": 60
+  }
+}</code></pre>
+        <p>Store JWT configuration values in appsettings.json. Use a strong key and keep secrets secure in production.</p>
+      </article>
+      <article>
+        <h3>Program.cs Configuration</h3>
+        <pre><code>using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
+
+var builder = WebApplication.CreateBuilder(args);
+
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+
+builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =&gt;
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter: Bearer your-token"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =&gt;
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();</code></pre>
+        <p>This configures JWT bearer authentication and authorization for the API, including Swagger documentation for JWT tokens.</p>
+      </article>
+      <article>
+        <h3>Auth Controller with Login and Protected Endpoint</h3>
+        <pre><code>using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace AuthApi.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly IConfiguration _configuration;
+
+        public AuthController(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        [HttpPost("login")]
+        public IActionResult Login([FromBody] LoginRequest request)
+        {
+            if (request.Username != "admin" || request.Password != "password")
+                return Unauthorized();
+
+            var token = GenerateJwtToken(request.Username);
+
+            return Ok(new { token });
+        }
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult GetProfile()
+        {
+            return Ok(new { message = "This is a protected endpoint.", user = User.Identity?.Name });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin")]
+        public IActionResult GetAdminData()
+        {
+            return Ok(new { message = "This endpoint requires Admin role.", user = User.Identity?.Name });
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpGet("user")]
+        public IActionResult GetUserData()
+        {
+            return Ok(new { message = "This endpoint requires User role.", user = User.Identity?.Name });
+        }
+
+        private string GenerateJwtToken(string username)
+        {
+            var jwtSettings = _configuration.GetSection("Jwt");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new List&lt;Claim&gt;
+            {
+                new Claim(ClaimTypes.Name, username),
+                new Claim(JwtRegisteredClaimNames.Sub, username),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            // Add role claims (example: admin gets Admin role)
+            if (username == "admin")
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+            }
+            else
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "User"));
+            }
+
+            var token = new JwtSecurityToken(
+                issuer: jwtSettings["Issuer"],
+                audience: jwtSettings["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(int.Parse(jwtSettings["DurationMinutes"]!)),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+    }
+
+    public class LoginRequest
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}</code></pre>
+        <p>This controller provides login functionality and demonstrates different levels of authorization: basic authentication, admin-only access, and user access. The JWT token includes role claims that determine endpoint access.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>JWT token authentication secures your API with stateless bearer tokens. The login endpoint issues the JWT, and protected endpoints validate the token before returning data.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Continue refining API security with refresh tokens and role-based authorization.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-16-efcore-api.html">Back</a>
+        <a class="nav-button" href="lesson-18-cors.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

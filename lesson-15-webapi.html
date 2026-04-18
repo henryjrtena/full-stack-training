@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 15 - ASP.NET Core WebAPI</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">API Development</span>
+      <h1>Lesson 15: ASP.NET Core WebAPI</h1>
+      <p>Build RESTful APIs with ASP.NET Core, including configuration, controllers, and API documentation with Swagger/OpenAPI.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>ASP.NET Core WebAPI enables building HTTP services that can be consumed by various clients. This lesson covers the essential components: Program.cs setup, ControllerBase usage, and integrating Swagger for API documentation.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li><code>Program.cs</code> configures the application pipeline and services.</li>
+        <li><code>ControllerBase</code> provides base functionality for API controllers.</li>
+        <li>Swagger/OpenAPI generates interactive API documentation.</li>
+        <li>Attribute routing defines API endpoints.</li>
+        <li>Model binding maps HTTP requests to method parameters.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>Program.cs Configuration</h3>
+        <pre><code>var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();</code></pre>
+        <p>This sets up the WebAPI with controllers, Swagger for development, and maps controller routes.</p>
+      </article>
+      <article>
+        <h3>Creating an API Controller</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc;
+
+namespace TodoApi.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class TodosController : ControllerBase
+{
+    private readonly ITodoRepository _repository;
+
+    public TodosController(ITodoRepository repository)
+    {
+        _repository = repository;
+    }
+
+    [HttpGet]
+    public async Task&lt;IActionResult&gt; GetTodos()
+    {
+        var todos = await _repository.GetAllAsync();
+        return Ok(todos);
+    }
+
+    [HttpGet("{id}")]
+    public async Task&lt;IActionResult&gt; GetTodo(int id)
+    {
+        var todo = await _repository.GetByIdAsync(id);
+        if (todo == null)
+            return NotFound();
+        return Ok(todo);
+    }
+
+    [HttpPost]
+    public async Task&lt;IActionResult&gt; CreateTodo([FromBody] CreateTodoRequest request)
+    {
+        var todo = new Todo { Title = request.Title };
+        await _repository.AddAsync(todo);
+        return CreatedAtAction(nameof(GetTodo), new { id = todo.Id }, todo);
+    }
+
+    [HttpPut("{id}")]
+    public async Task&lt;IActionResult&gt; UpdateTodo(int id, [FromBody] UpdateTodoRequest request)
+    {
+        var todo = await _repository.GetByIdAsync(id);
+        if (todo == null)
+            return NotFound();
+        
+        todo.Title = request.Title;
+        await _repository.UpdateAsync(todo);
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task&lt;IActionResult&gt; DeleteTodo(int id)
+    {
+        var todo = await _repository.GetByIdAsync(id);
+        if (todo == null)
+            return NotFound();
+        
+        await _repository.DeleteAsync(id);
+        return NoContent();
+    }
+}</code></pre>
+        <p><code>ControllerBase</code> provides methods like <code>Ok()</code>, <code>NotFound()</code>, and <code>CreatedAtAction()</code> for standard HTTP responses.</p>
+      </article>
+      <article>
+        <h3>Swagger and OpenAPI Configuration</h3>
+        <pre><code>builder.Services.AddSwaggerGen(options =&gt;
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Todo API",
+        Version = "v1",
+        Description = "A simple Todo API built with ASP.NET Core"
+    });
+});</code></pre>
+        <p>This configures Swagger to generate OpenAPI documentation for your API endpoints.</p>
+      </article>
+      <article>
+        <h3>Adding XML Comments for Better Documentation</h3>
+        <pre><code>builder.Services.AddSwaggerGen(options =&gt;
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { ... });
+    
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    options.IncludeXmlComments(xmlPath);
+});</code></pre>
+        <p>Include XML documentation comments in the Swagger UI for detailed endpoint descriptions.</p>
+      </article>
+      <article>
+        <h3>Model Classes and Request/Response DTOs</h3>
+        <pre><code>public class Todo
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public bool IsCompleted { get; set; }
+}
+
+public class CreateTodoRequest
+{
+    [Required]
+    [StringLength(100)]
+    public string Title { get; set; } = string.Empty;
+}
+
+public class UpdateTodoRequest
+{
+    [Required]
+    [StringLength(100)]
+    public string Title { get; set; } = string.Empty;
+}</code></pre>
+        <p>Use Data Annotations for validation and separate DTOs for requests and responses.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>ASP.NET Core WebAPI provides a robust framework for building RESTful services. Program.cs configures the application, ControllerBase handles HTTP responses, and Swagger/OpenAPI ensures your API is well-documented and discoverable.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Continue exploring ASP.NET Core features and best practices.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-14-global-exception-handling.html">Back</a>
+        <a class="nav-button" href="lesson-16-efcore-api.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

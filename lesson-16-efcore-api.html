@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 16 - EF Core with API Controller</title>
+  <style>
+    :root{--card:#fff;--ink:#1f2937;--muted:#526072;--brand:#0f766e;--line:#d8e1ea;--code:#0b1120;}*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(180deg,#eef6ff,#f9fbfd);color:var(--ink);line-height:1.6}.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 48px}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}h1,h2,h3{margin-top:0}p,li{color:var(--muted)}ul{padding-left:22px}pre{background:var(--code);color:#e5eefc;padding:18px;border-radius:14px;overflow:auto}.next{border-left:5px solid var(--brand);padding-left:16px}.nav-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.nav-button{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600}.nav-button.secondary{background:#475569}.eyebrow{display:inline-block;padding:6px 10px;border-radius:999px;background:#d1fae5;color:#065f46;font-weight:700;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Data Access & API Integration</span>
+      <h1>Lesson 16: EF Core with API Controller</h1>
+      <p>Integrate Entity Framework Core with ASP.NET Core WebAPI controllers using dependency injection and repository patterns.</p>
+    </section>
+  </header>
+  <main class="wrap">
+    <section class="card">
+      <h2>Introduction</h2>
+      <p>This lesson demonstrates how to combine EF Core for data access with ASP.NET Core WebAPI controllers, using dependency injection to manage the GroceryRepository. This creates a clean, testable architecture for your API endpoints.</p>
+    </section>
+    <section class="card">
+      <h2>Key Concepts</h2>
+      <ul>
+        <li>Repository pattern abstracts data access logic.</li>
+        <li>Dependency injection manages service lifetimes.</li>
+        <li>EF Core DbContext handles database operations.</li>
+        <li>API controllers use repositories for business logic.</li>
+        <li>Async operations ensure scalable API responses.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Step-by-Step</h2>
+      <article>
+        <h3>EF Core Models</h3>
+        <pre><code>namespace GroceryApi.Models;
+
+public class GroceryItem
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    public bool IsPurchased { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}</code></pre>
+        <p>Define your entity model for the GroceryItem table.</p>
+      </article>
+      <article>
+        <h3>DbContext Configuration</h3>
+        <pre><code>using Microsoft.EntityFrameworkCore;
+using GroceryApi.Models;
+
+namespace GroceryApi.Data;
+
+public class GroceryDbContext : DbContext
+{
+    public GroceryDbContext(DbContextOptions&lt;GroceryDbContext&gt; options)
+        : base(options)
+    {
+    }
+
+    public DbSet&lt;GroceryItem&gt; GroceryItems =&gt; Set&lt;GroceryItem&gt;();
+}</code></pre>
+        <p>Configure the DbContext with the GroceryItems entity set.</p>
+      </article>
+      <article>
+        <h3>Repository Interface and Implementation</h3>
+        <pre><code>using GroceryApi.Models;
+
+namespace GroceryApi.Repositories;
+
+public interface IGroceryRepository
+{
+    Task&lt;IEnumerable&lt;GroceryItem&gt;&gt; GetAllAsync();
+    Task&lt;GroceryItem?&gt; GetByIdAsync(int id);
+    Task&lt;GroceryItem&gt; AddAsync(GroceryItem item);
+    Task UpdateAsync(GroceryItem item);
+    Task DeleteAsync(int id);
+}
+
+public class GroceryRepository : IGroceryRepository
+{
+    private readonly GroceryDbContext _context;
+
+    public GroceryRepository(GroceryDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task&lt;IEnumerable&lt;GroceryItem&gt;&gt; GetAllAsync()
+    {
+        return await _context.GroceryItems.ToListAsync();
+    }
+
+    public async Task&lt;GroceryItem?&gt; GetByIdAsync(int id)
+    {
+        return await _context.GroceryItems.FindAsync(id);
+    }
+
+    public async Task&lt;GroceryItem&gt; AddAsync(GroceryItem item)
+    {
+        _context.GroceryItems.Add(item);
+        await _context.SaveChangesAsync();
+        return item;
+    }
+
+    public async Task UpdateAsync(GroceryItem item)
+    {
+        _context.Entry(item).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        var item = await _context.GroceryItems.FindAsync(id);
+        if (item != null)
+        {
+            _context.GroceryItems.Remove(item);
+            await _context.SaveChangesAsync();
+        }
+    }
+}</code></pre>
+        <p>Implement the repository pattern to abstract data access operations.</p>
+      </article>
+      <article>
+        <h3>Program.cs with Dependency Injection</h3>
+        <pre><code>var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddDbContext&lt;GroceryDbContext&gt;(options =&gt;
+    options.UseSqlServer(builder.Configuration.GetConnectionString("GroceryDb")));
+builder.Services.AddScoped&lt;IGroceryRepository, GroceryRepository&gt;();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();</code></pre>
+        <p>Register the DbContext and repository with the DI container.</p>
+      </article>
+      <article>
+        <h3>API Controller with Repository Injection</h3>
+        <pre><code>using Microsoft.AspNetCore.Mvc;
+using GroceryApi.Models;
+using GroceryApi.Repositories;
+
+namespace GroceryApi.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class GroceriesController : ControllerBase
+{
+    private readonly IGroceryRepository _repository;
+
+    public GroceriesController(IGroceryRepository repository)
+    {
+        _repository = repository;
+    }
+
+    [HttpGet]
+    public async Task&lt;IActionResult&gt; GetGroceries()
+    {
+        var groceries = await _repository.GetAllAsync();
+        return Ok(groceries);
+    }
+
+    [HttpGet("{id}")]
+    public async Task&lt;IActionResult&gt; GetGrocery(int id)
+    {
+        var grocery = await _repository.GetByIdAsync(id);
+        if (grocery == null)
+            return NotFound();
+        return Ok(grocery);
+    }
+
+    [HttpPost]
+    public async Task&lt;IActionResult&gt; CreateGrocery([FromBody] GroceryItem grocery)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var createdGrocery = await _repository.AddAsync(grocery);
+        return CreatedAtAction(nameof(GetGrocery), new { id = createdGrocery.Id }, createdGrocery);
+    }
+
+    [HttpPut("{id}")]
+    public async Task&lt;IActionResult&gt; UpdateGrocery(int id, [FromBody] GroceryItem grocery)
+    {
+        if (id != grocery.Id)
+            return BadRequest();
+
+        var existingGrocery = await _repository.GetByIdAsync(id);
+        if (existingGrocery == null)
+            return NotFound();
+
+        await _repository.UpdateAsync(grocery);
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task&lt;IActionResult&gt; DeleteGrocery(int id)
+    {
+        var grocery = await _repository.GetByIdAsync(id);
+        if (grocery == null)
+            return NotFound();
+
+        await _repository.DeleteAsync(id);
+        return NoContent();
+    }
+}</code></pre>
+        <p>The controller uses dependency injection to access the repository for data operations.</p>
+      </article>
+      <article>
+        <h3>Connection String Configuration</h3>
+        <pre><code>{
+  "ConnectionStrings": {
+    "GroceryDb": "Server=(localdb)\\mssqllocaldb;Database=GroceryDb;Trusted_Connection=True;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}</code></pre>
+        <p>Configure the database connection string in appsettings.json.</p>
+      </article>
+    </section>
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Combining EF Core with ASP.NET Core WebAPI through dependency injection and repository patterns creates a maintainable and testable API architecture. The repository abstracts data access, while DI manages component lifecycles.</p>
+    </section>
+    <footer class="card next">
+      <h2>Next Lesson</h2>
+      <p>Explore advanced ASP.NET Core features and testing strategies.</p>
+      <div class="nav-buttons">
+        <a class="nav-button secondary" href="lesson-15-webapi.html">Back</a>
+        <a class="nav-button" href="lesson-17-jwt-token.html">Next Lesson</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
